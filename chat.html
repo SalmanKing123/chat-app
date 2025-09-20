@@ -2,37 +2,80 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Funky Chat Room</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Bungee&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="chat.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f2f2f2;
+        margin: 0;
+        padding: 0;
+      }
+      #chat-container {
+        height: 400px;
+        overflow-y: auto;
+        background: #fff;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+      .message {
+        padding: 6px;
+        margin: 4px 0;
+        border-radius: 6px;
+      }
+      .you {
+        background: #d1ffd1;
+        text-align: right;
+      }
+      .friend {
+        background: #e1e1ff;
+        text-align: left;
+      }
+      .reactions {
+        margin-top: 4px;
+        font-size: 14px;
+      }
+      #controls {
+        display: flex;
+        margin-top: 10px;
+      }
+      #messageInput {
+        flex: 1;
+        padding: 8px;
+      }
+      button {
+        padding: 8px 12px;
+        margin-left: 5px;
+        cursor: pointer;
+      }
+      .notification {
+        background: #ffe680;
+        padding: 5px;
+        margin: 5px 0;
+      }
+      #typing-indicator {
+        font-style: italic;
+        display: none;
+      }
+      #typing-indicator.active {
+        display: block;
+      }
+    </style>
   </head>
   <body>
+    <h2>Chat App</h2>
+
     <div id="notification-container"></div>
+    <div id="chat-container"></div>
+    <p id="typing-indicator">Friend is typing...</p>
 
-    <div id="loader" class="loader">
-      <div class="spinner"></div>
-    </div>
-
-    <header>
-      <button class="back-btn" onclick="goBack()">⬅ Back</button>
-      ⚡ Funky Chat ⚡
-      <span id="usernameDisplay"></span>
-    </header>
-
-    <div class="chat-container" id="chat-container"></div>
-    <div id="typing-indicator" class="typing-indicator">
-      Friend is typing...
-    </div>
-
-    <div class="chat-input">
+    <div id="controls">
       <input type="text" id="messageInput" placeholder="Type a message..." />
       <button onclick="sendMessage()">Send</button>
+      <button onclick="goBack()">Back</button>
     </div>
 
-    <!-- Import Firebase SDKs (must load before chat.js) -->
+    <!-- Import Firebase and chat.js -->
     <script type="module" src="chat.js"></script>
   </body>
 </html>

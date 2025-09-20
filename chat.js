@@ -1,17 +1,17 @@
 // Import Firebase SDKs
-import { initializeApp } from "firebase/app";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import {
   getFirestore,
   collection,
   addDoc,
+  getDocs,
   onSnapshot,
-  query,
-  orderBy,
-  serverTimestamp,
-} from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-// Firebase configuration
+// Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyD0mDWg5NLpS1X1TrJ09QSZwTbV8rOdLpI",
   authDomain: "chat-app-cc84a.firebaseapp.com",
@@ -22,105 +22,93 @@ const firebaseConfig = {
   measurementId: "G-PR6YGH0LLL",
 };
 
-// Initialize Firebase
+// Init Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const db = getFirestore(app);
 
-// =================== USER CHECK ===================
-const loggedInUser = localStorage.getItem("loggedInUser");
-if (!loggedInUser) window.location.href = "login.html";
-
-document.getElementById("usernameDisplay").innerText = `👤 ${loggedInUser}`;
-
+// Get elements
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
 const typingIndicator = document.getElementById("typing-indicator");
 
-// =================== SOUNDS ===================
-const sendSound = new Audio("sounds/send.mp3");
-const hoverSound = new Audio("sounds/hover.mp3");
+// Current user
+const loggedInUser = localStorage.getItem("loggedInUser") || "You";
 
-document.querySelectorAll("button").forEach((btn) => {
-  btn.addEventListener("mouseenter", () => {
-    hoverSound.currentTime = 0;
-    hoverSound.play();
+// =================== RENDER ===================
+function renderMessage(docData, id) {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add("message");
+  msgDiv.classList.add(docData.sender === loggedInUser ? "you" : "friend");
+  msgDiv.innerText = `${docData.sender}: ${docData.text}`;
+
+  // If it's your message, add edit/delete buttons
+  if (docData.sender === loggedInUser) {
+    const actionsDiv = document.createElement("div");
+    actionsDiv.style.marginTop = "5px";
+
+    const editBtn = document.createElement("button");
+    editBtn.innerText = "✏️";
+    editBtn.onclick = () => editMessage(id, docData.text);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.innerText = "🗑️";
+    deleteBtn.onclick = () => deleteMessage(id);
+
+    actionsDiv.appendChild(editBtn);
+    actionsDiv.appendChild(deleteBtn);
+    msgDiv.appendChild(document.createElement("br"));
+    msgDiv.appendChild(actionsDiv);
+  }
+
+  chatContainer.appendChild(msgDiv);
+}
+
+// =================== LOAD MESSAGES (REAL-TIME) ===================
+onSnapshot(collection(db, "messages"), (snapshot) => {
+  chatContainer.innerHTML = "";
+  snapshot.forEach((doc) => {
+    renderMessage(doc.data(), doc.id);
   });
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
-// =================== NOTIFICATIONS ===================
-function showNotification(message) {
-  if (message.sender === loggedInUser) return; // don't notify for own messages
-
-  const notif = document.createElement("div");
-  notif.classList.add("notification");
-  notif.innerText = `${message.sender}: ${message.text}`;
-  notificationContainer.appendChild(notif);
-
-  setTimeout(() => {
-    notif.remove();
-  }, 3000);
-}
-
-// =================== RENDER MESSAGES ===================
-function renderMessages(messages) {
-  chatContainer.innerHTML = "";
-
-  messages.forEach((msg) => {
-    const msgDiv = document.createElement("div");
-    msgDiv.classList.add("message");
-
-    if (msg.sender === loggedInUser) {
-      msgDiv.classList.add("you");
-      msgDiv.innerText = `🤖 ${msg.sender}: ${msg.text}`;
-    } else {
-      msgDiv.classList.add("friend");
-      msgDiv.innerText = `${msg.sender}: ${msg.text}`;
-      showNotification(msg);
-    }
-
-    chatContainer.appendChild(msgDiv);
-  });
-
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-// =================== SEND MESSAGE ===================
-export async function sendMessage() {
+// =================== SEND ===================
+async function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
 
-  try {
-    await addDoc(collection(db, "messages"), {
-      sender: loggedInUser,
-      text,
-      timestamp: serverTimestamp(),
-    });
+  await addDoc(collection(db, "messages"), {
+    sender: loggedInUser,
+    text: text,
+    timestamp: Date.now(),
+  });
 
-    messageInput.value = "";
-    sendSound.currentTime = 0;
-    sendSound.play();
-  } catch (e) {
-    console.error("Error sending message: ", e);
+  messageInput.value = "";
+}
+
+// =================== EDIT ===================
+async function editMessage(id, oldText) {
+  const newText = prompt("Edit your message:", oldText);
+  if (newText && newText.trim() !== "") {
+    await updateDoc(doc(db, "messages", id), {
+      text: newText.trim(),
+    });
   }
 }
 
-// =================== LOAD MESSAGES IN REAL-TIME ===================
-const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
-onSnapshot(q, (snapshot) => {
-  const msgs = [];
-  snapshot.forEach((doc) => msgs.push(doc.data()));
-  renderMessages(msgs);
-});
-
-// =================== GO BACK ===================
-function goBack() {
-  const loader = document.getElementById("loader");
-  loader.classList.add("active");
-  setTimeout(() => {
-    window.location.href = "index.html";
-  }, 800);
+// =================== DELETE ===================
+async function deleteMessage(id) {
+  if (confirm("Delete this message?")) {
+    await deleteDoc(doc(db, "messages", id));
+  }
 }
+
+// =================== BACK ===================
+function goBack() {
+  window.location.href = "index.html";
+}
+
+// Expose functions globally for buttons
+window.sendMessage = sendMessage;
 window.goBack = goBack;
-window.sendMessage = sendMessage; // expose for button onclick
