@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>3Chat - Funky Friends</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bungee&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="loader" class="loader">
+      <div class="spinner"></div>
+    </div>
+
+    <header>
+      <button id="modeToggle">🌙</button>
+      💬 3Chat - Funky Friends 💬
+      <span id="usernameDisplay"></span>
+      <button class="logout-btn" onclick="logout()">Logout ⬅</button>
+    </header>
+
+    <h1>Welcome to the Chaos Hub ⚡</h1>
+    <p>Just us 3 legends chatting forever 🚀</p>
+    <button onclick="enterChat()">Chat</button>
+
+    <div class="friends">
+      <div class="friend" onclick="goToProfile('Sam')">
+        <img src="avatars/Sam.png" alt="Sam" class="avatar" /><br />
+        Sam <br />
+        Coder of Doom <br />
+        <span class="status" id="status-Sam">Online</span>
+      </div>
+      <div class="friend" onclick="goToProfile('Mohsin')">
+        <img src="avatars/mohsin.png" alt="Mohsin" class="avatar" /><br />
+        Mohsin <br />
+        Problem Solver <br />
+        <span class="status" id="status-Sam">Busy</span>
+      </div>
+      <div class="friend" onclick="goToProfile('Arsh')">
+        <img src="avatars/Arsh.jpeg" alt="Arsh" class="avatar" /><br />
+        Arsh <br />
+        Meme <br />
+        <span class="status" id="status-Sam">Sleeping</span>
+      </div>
+    </div>
+
+    <footer>Made with 💜 by 3 friends who talk too much.</footer>
+
+    <script>
+      const loggedInUser = localStorage.getItem("loggedInUser");
+      const usernameDisplay = document.getElementById("usernameDisplay");
+
+      if (!loggedInUser) window.location.href = "login.html";
+      else {
+        usernameDisplay.innerText = `👤 ${loggedInUser}`;
+        usernameDisplay.style.marginLeft = "15px";
+        usernameDisplay.style.fontWeight = "bold";
+      }
+
+      function goToProfile(name) {
+        window.location.href = `profile.html?name=${name}`;
+      }
+
+      function enterChat() {
+        window.location.href = "chat.html";
+      }
+
+      function logout() {
+        localStorage.removeItem("loggedInUser");
+        window.location.href = "login.html";
+      }
+    </script>
+
+    <script>
+      const toggleBtn = document.getElementById("modeToggle");
+
+      // Load saved mode from localStorage
+      if (localStorage.getItem("mode") === "dark") {
+        document.body.classList.add("dark");
+        toggleBtn.innerText = "☀️";
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+        const isDark = document.body.classList.contains("dark");
+        toggleBtn.innerText = isDark ? "☀️" : "🌙";
+        localStorage.setItem("mode", isDark ? "dark" : "light");
+      });
+    </script>
+  </body>
+</html>

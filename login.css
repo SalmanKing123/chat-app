@@ -1,0 +1,120 @@
+/* Full screen funky background */
+body,
+html {
+  height: 100%;
+  margin: 0;
+  font-family: "Bungee", cursive;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background: linear-gradient(-45deg, #ff4b1f, #1fddff, #ffe600, #ff00f7);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Background animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Centered login card */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px 50px;
+  border-radius: 25px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: floatIn 1s ease-out;
+  width: 400px;
+  max-width: 90%;
+}
+
+/* Card float-in animation */
+@keyframes floatIn {
+  0% {
+    transform: translateY(-100px) scale(0.7);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Inputs & button */
+.login-card input {
+  display: block;
+  width: 100%;
+  padding: 12px 15px;
+  margin: 15px 0;
+  border-radius: 20px;
+  border: none;
+  font-size: 16px;
+}
+
+.login-card button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 25px;
+  background: linear-gradient(90deg, #ff4b1f, #1fddff);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.3s;
+}
+
+.login-card button:hover {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+/* =================== MOBILE RESPONSIVE =================== */
+@media screen and (max-width: 768px) {
+  .login-card {
+    padding: 35px 40px;
+    width: 350px;
+  }
+
+  .login-card input {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  .login-card button {
+    font-size: 15px;
+    padding: 10px 20px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .login-card {
+    padding: 25px 20px;
+    width: 90%;
+  }
+
+  .login-card input {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .login-card button {
+    font-size: 14px;
+    padding: 8px 15px;
+  }
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Friend Profile</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bungee&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="profile.css" />
+  </head>
+  <body>
+    <div id="loader" class="loader">
+      <div class="spinner"></div>
+    </div>
+
+    <header>
+      <button class="back-btn" onclick="goBack()">⬅ Back to Home</button>
+      ⚡ Profile Page ⚡
+      <span id="usernameDisplay"></span>
+      <button class="send-msg-btn" onclick="sendMessageToFriend('Sam')">
+        💬 Send Message
+      </button>
+    </header>
+
+    <div class="profile-card" id="profile"></div>
+
+    <script>
+      const loggedInUser = localStorage.getItem("loggedInUser");
+      const usernameDisplay = document.getElementById("usernameDisplay");
+
+      if (!loggedInUser) window.location.href = "login.html";
+      else {
+        usernameDisplay.innerText = `👤 ${loggedInUser}`;
+        usernameDisplay.style.marginLeft = "15px";
+        usernameDisplay.style.fontWeight = "bold";
+      }
+
+      function goBack() {
+        window.location.href = "index.html";
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const name = params.get("name");
+
+      const profileBox = document.getElementById("profile");
+      const profiles = {
+        Sam: {
+          emoji: "🐧",
+          role: "Coder of Doom",
+          bio: "Loves coding funky projects.",
+          hobbies: "Gaming, Cybersecurity, Music",
+          skills: "JS, Hacking, React Native",
+          avatar: "avatars/Sam.png",
+        },
+        Mohsin: {
+          emoji: "🦸",
+          role: "Problem Solver",
+          bio: "Solves impossible bugs.",
+          hobbies: "Reading, Travelling, Chess",
+          skills: "Debugging, Leadership, Creative Thinking",
+          avatar: "avatars/mohsin.png",
+        },
+        Arsh: {
+          emoji: "🤖",
+          role: "Meme Master",
+          bio: "Turns everything into memes.",
+          hobbies: "Memes, Anime, Football",
+          skills: "Photoshop, Humor Engineering, Storytelling",
+          avatar: "avatars/Arsh.jpeg",
+        },
+      };
+
+      if (profiles[name]) {
+        const p = profiles[name];
+        profileBox.innerHTML = `
+        <img src="${p.avatar}" alt="${name}" class="profile-avatar">
+        <h1>${p.emoji} ${name}</h1>
+        <p><strong>${p.role}</strong></p>
+        <p>${p.bio}</p>
+        <p>${p.hobbies}</p>
+        <p>${p.skills}</p>
+      `;
+      } else profileBox.innerHTML = "<h1>Profile not found ❌</h1>";
+    </script>
+
+    <script>
+      function sendMessageToFriend(friendName) {
+        // Save the selected friend in localStorage
+        localStorage.setItem("currentChatFriend", friendName);
+
+        // Go to chat page
+        window.location.href = "chat.html";
+      }
+    </script>
+  </body>
+</html>

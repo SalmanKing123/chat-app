@@ -1,0 +1,185 @@
+body {
+  margin: 0;
+  font-family: "Bungee", cursive;
+  background: linear-gradient(135deg, #ff00c8, #00ffe7);
+  color: white;
+  text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.profile-card {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 40px;
+  border-radius: 20px;
+  width: 350px;
+  margin: auto;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s;
+}
+
+.profile-card h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.profile-card p {
+  margin: 8px 0;
+  font-size: 18px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  color: white;
+  font-size: 24px;
+  gap: 20px;
+}
+
+.back-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 20px;
+  background: yellow;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.back-btn:hover {
+  transform: scale(1.1) rotate(-5deg);
+  background: #ffea00;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid yellow;
+  margin-bottom: 15px;
+  object-fit: cover;
+  transition: all 0.3s;
+}
+
+/* Full-screen loader */
+.loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.loader.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid yellow;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.send-msg-btn {
+  padding: 12px 25px;
+  border-radius: 25px;
+  background: linear-gradient(90deg, #ff4b1f, #1fddff);
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.send-msg-btn:hover {
+  transform: scale(1.1) rotate(-5deg);
+  background: yellow;
+  color: black;
+}
+
+/* =================== MOBILE RESPONSIVE =================== */
+@media screen and (max-width: 768px) {
+  .profile-card {
+    width: 300px;
+    padding: 30px;
+  }
+
+  .profile-card h1 {
+    font-size: 28px;
+  }
+
+  .profile-card p {
+    font-size: 16px;
+  }
+
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .send-msg-btn {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+
+  header {
+    font-size: 20px;
+    padding: 12px 15px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .profile-card {
+    width: 250px;
+    padding: 20px;
+  }
+
+  .profile-card h1 {
+    font-size: 24px;
+  }
+
+  .profile-card p {
+    font-size: 14px;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .send-msg-btn {
+    font-size: 14px;
+    padding: 8px 15px;
+  }
+
+  header {
+    font-size: 18px;
+    padding: 10px 12px;
+  }
+}

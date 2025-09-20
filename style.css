@@ -1,0 +1,425 @@
+/* =================== VARIABLES =================== */
+:root {
+  --bg-gradient: linear-gradient(135deg, #ff00c8, #00ffe7);
+  --text-color: white;
+  --header-bg: rgba(0, 0, 0, 0.4);
+  --button-bg: yellow;
+  --button-hover: #ffea00;
+  --friend-bg: rgba(255, 255, 255, 0.1);
+  --friend-bg-hover: rgba(255, 255, 255, 0.2);
+  --avatar-border: yellow;
+  --footer-bg: rgba(0, 0, 0, 0.5);
+  --spinner-color: yellow;
+  --message-bg-you: yellow;
+  --message-bg-friend: rgba(255, 255, 255, 0.3);
+  --notification-bg: yellow;
+  --notification-text: black;
+}
+
+body.dark {
+  --bg-gradient: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+  --text-color: #ffffff;
+  --header-bg: rgba(0, 0, 0, 0.8);
+  --button-bg: #ffcc00;
+  --button-hover: #ffe600;
+  --friend-bg: rgba(50, 50, 50, 0.5);
+  --friend-bg-hover: rgba(255, 255, 255, 0.2);
+  --avatar-border: #ffe600;
+  --footer-bg: rgba(0, 0, 0, 0.8);
+  --spinner-color: #ffe600;
+  --message-bg-you: #ffcc00;
+  --message-bg-friend: rgba(50, 50, 50, 0.5);
+  --notification-bg: #ffcc00;
+  --notification-text: black;
+}
+
+/* =================== BODY =================== */
+body {
+  margin: 0;
+  font-family: "Bungee", cursive;
+  background: var(--bg-gradient);
+  color: var(--text-color);
+  text-align: center;
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: all 0.3s;
+}
+
+/* =================== HEADER =================== */
+header {
+  padding: 20px;
+  font-size: 28px;
+  background: var(--header-bg);
+  transition: background 0.3s;
+}
+
+/* =================== TITLES & PARAGRAPH =================== */
+h1 {
+  font-size: 60px;
+  margin: 40px 0 10px;
+  text-shadow: 2px 2px #000;
+}
+p {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+/* =================== BUTTONS =================== */
+button {
+  padding: 15px 30px;
+  font-size: 20px;
+  border: none;
+  border-radius: 50px;
+  background: var(--button-bg);
+  color: black;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.1) rotate(-3deg);
+  background: var(--button-hover);
+}
+
+/* =================== FRIENDS =================== */
+.friends {
+  display: flex;
+  justify-content: center;
+  margin: 50px;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.friend {
+  display: inline-block;
+  text-align: center;
+  padding: 15px;
+  border-radius: 20px;
+  background: var(--friend-bg);
+  cursor: pointer;
+  transition: transform 0.5s, box-shadow 0.5s, background 0.3s;
+  font-family: "Bungee", cursive;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  position: relative;
+  min-width: 120px;
+  max-width: 150px;
+}
+
+.friend img.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--avatar-border);
+  margin-bottom: 10px;
+  transition: transform 0.5s;
+}
+
+.friend:hover {
+  transform: scale(1.1) rotate(-5deg);
+  background: var(--friend-bg-hover);
+  box-shadow: 0 0 25px var(--avatar-border), 0 0 15px #ffea00 inset;
+}
+
+.friend:hover img.avatar {
+  transform: rotate(20deg) scale(1.15);
+}
+
+.friend:hover::before {
+  content: "✨";
+  position: absolute;
+  font-size: 24px;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(15deg);
+  animation: sparkle 1s infinite alternate;
+}
+
+@keyframes sparkle {
+  0% {
+    transform: translateX(-50%) rotate(0deg) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(-50%) rotate(15deg) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) rotate(-10deg) scale(1);
+    opacity: 0.7;
+  }
+}
+
+/* =================== FOOTER =================== */
+footer {
+  position: relative;
+  bottom: 0;
+  width: 100%;
+  font-size: 14px;
+  background: var(--footer-bg);
+  padding: 10px;
+  transition: background 0.3s;
+}
+
+/* =================== EMOJIS =================== */
+.emoji {
+  position: absolute;
+  font-size: 2rem;
+  animation: floatUp 6s linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(100vh) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* =================== LOGOUT & USER =================== */
+.logout-btn {
+  float: right;
+  margin-top: -5px;
+  padding: 8px 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 20px;
+  background: var(--button-bg);
+  color: black;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.logout-btn:hover {
+  transform: scale(1.1) rotate(-5deg);
+  background: var(--button-hover);
+}
+
+#usernameDisplay {
+  font-size: 16px;
+  color: var(--avatar-border);
+}
+
+/* =================== LOADER =================== */
+.loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.loader.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid var(--spinner-color);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* =================== NOTIFICATIONS =================== */
+#notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.notification {
+  background: var(--notification-bg);
+  color: var(--notification-text);
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  border-radius: 20px;
+  font-family: "Bungee", cursive;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =================== CHAT MESSAGES =================== */
+.message {
+  margin: 10px;
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+.message.you {
+  background: var(--message-bg-you);
+  color: black;
+  align-self: flex-end;
+}
+
+.message.friend {
+  background: var(--message-bg-friend);
+  color: white;
+  align-self: flex-start;
+}
+
+.chat-input {
+  display: flex;
+  gap: 10px;
+  margin: 15px;
+}
+
+#messageInput {
+  flex: 1;
+  padding: 10px;
+  border-radius: 15px;
+  border: none;
+}
+
+.status {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  font-style: italic;
+  color: #ffeb3b;
+  text-shadow: 1px 1px 2px black;
+  transition: all 0.3s;
+}
+.status.online {
+  color: #00ff00;
+  animation: pulse 1.5s infinite;
+}
+.status.busy {
+  color: #ff8000;
+  animation: pulse 1.5s infinite;
+}
+.status.sleeping {
+  color: #8888ff;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+.action-btn {
+  background: yellow;
+  border: none;
+  border-radius: 10px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s;
+}
+.action-btn:hover {
+  transform: scale(1.2) rotate(-5deg);
+  background: #ffea00;
+}
+
+/* =================== MOBILE RESPONSIVE =================== */
+@media screen and (max-width: 768px) {
+  h1 {
+    font-size: 40px;
+  }
+  p {
+    font-size: 16px;
+  }
+  .friends {
+    margin: 20px;
+    gap: 15px;
+  }
+  .friend {
+    min-width: 100px;
+    max-width: 120px;
+    padding: 10px;
+  }
+  .friend img.avatar {
+    width: 60px;
+    height: 60px;
+  }
+  .chat-container {
+    max-height: 300px;
+    margin: 10px;
+    padding: 8px;
+  }
+  #messageInput {
+    padding: 8px;
+    font-size: 14px;
+  }
+  .chat-input button {
+    padding: 8px 15px;
+    font-size: 14px;
+  }
+  header {
+    font-size: 22px;
+    padding: 15px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  h1 {
+    font-size: 32px;
+  }
+  .friend {
+    min-width: 90px;
+    max-width: 100px;
+    padding: 8px;
+  }
+  .friend img.avatar {
+    width: 50px;
+    height: 50px;
+  }
+  .chat-container {
+    max-height: 250px;
+  }
+}

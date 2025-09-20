@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Funky Chat Room</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bungee&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="chat.css" />
+  </head>
+  <body>
+    <div id="notification-container"></div>
+
+    <div id="loader" class="loader">
+      <div class="spinner"></div>
+    </div>
+
+    <header>
+      <button class="back-btn" onclick="goBack()">⬅ Back</button>
+      ⚡ Funky Chat ⚡
+      <span id="usernameDisplay"></span>
+    </header>
+
+    <div class="chat-container" id="chat-container"></div>
+
+    <div id="chat-container"></div>
+    <div id="typing-indicator" class="typing-indicator">
+      Friend is typing...
+    </div>
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+      const loggedInUser = localStorage.getItem("loggedInUser");
+      const usernameDisplay = document.getElementById("usernameDisplay");
+      if (!loggedInUser) window.location.href = "login.html";
+      else usernameDisplay.innerText = `👤 ${loggedInUser}`;
+
+      const chatContainer = document.getElementById("chat-container");
+      const messageInput = document.getElementById("messageInput");
+      let messages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+
+      // Render all messages with emoji reactions
+      function renderMessages() {
+        chatContainer.innerHTML = "";
+        messages.forEach((msg, index) => {
+          const msgDiv = document.createElement("div");
+          msgDiv.classList.add("message");
+
+          if (msg.sender === loggedInUser) {
+            msgDiv.classList.add("you");
+            msgDiv.innerText = `🤖 ${loggedInUser}: ${msg.text}`;
+          } else {
+            msgDiv.classList.add("friend");
+            msgDiv.innerText = `${msg.sender}: ${msg.text}`;
+          }
+
+          // Create reactions bar
+          const reactionsDiv = document.createElement("div");
+          reactionsDiv.classList.add("reactions");
+          const emojis = ["❤️", "😂", "😮", "👍", "👎"];
+
+          emojis.forEach((emoji) => {
+            const emojiBtn = document.createElement("span");
+            emojiBtn.style.cursor = "pointer";
+            emojiBtn.style.marginRight = "5px";
+
+            // Show count if exists
+            if (msg.reactions && msg.reactions[emoji]) {
+              emojiBtn.innerText = `${emoji} ${msg.reactions[emoji]}`;
+            } else {
+              emojiBtn.innerText = emoji;
+            }
+
+            // Add reaction on click
+            emojiBtn.addEventListener("click", () => {
+              if (!msg.reactions) msg.reactions = {};
+              msg.reactions[emoji] = msg.reactions[emoji]
+                ? msg.reactions[emoji] + 1
+                : 1;
+              localStorage.setItem("chatMessages", JSON.stringify(messages));
+              renderMessages();
+            });
+
+            reactionsDiv.appendChild(emojiBtn);
+          });
+
+          msgDiv.appendChild(document.createElement("br"));
+          msgDiv.appendChild(reactionsDiv);
+          chatContainer.appendChild(msgDiv);
+        });
+
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      // Send message including empty reactions object
+      function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        messages.push({
+          sender: loggedInUser,
+          text: text,
+          reactions: {},
+        });
+
+        localStorage.setItem("chatMessages", JSON.stringify(messages));
+        messageInput.value = "";
+        renderMessages();
+      }
+
+      function goBack() {
+        window.location.href = "index.html";
+      }
+
+      renderMessages();
+    </script>
+  </body>
+</html>
