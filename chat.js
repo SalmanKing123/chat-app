@@ -130,18 +130,55 @@ window.sendMessage = sendMessage;
 window.goBack = goBack;
 
 // =================== UPLOAD CHAT BACKGROUND ===================
+// const reader = new FileReader();
+// reader.onload = function (event) {
+//   chatContainer.style.backgroundImage = `url(${event.target.result})`;
+//   chatContainer.style.backgroundSize = "cover";
+//   chatContainer.style.backgroundPosition = "center";
+// };
+// reader.readAsDataURL(file);
+
+// bgUploadInput.addEventListener("change", async (e) => {
+//   const file = e.target.files[0];
+//   if (!file) return;
+
+//   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
+//   await uploadBytes(storageRef, file);
+
+//   const downloadURL = await getDownloadURL(storageRef);
+
+//   const userDocRef = doc(db, "users", userId);
+//   await updateDoc(userDocRef, { chatBackground: downloadURL });
+
+//   chatContainer.style.backgroundImage = `url(${downloadURL})`;
+//   chatContainer.style.backgroundSize = "cover";
+//   chatContainer.style.backgroundPosition = "center";
+// });
+
+// =================== UPLOAD CHAT BACKGROUND ===================
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  // 1️⃣ Render immediately using FileReader
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    chatContainer.style.backgroundImage = `url(${event.target.result})`;
+    chatContainer.style.backgroundSize = "cover";
+    chatContainer.style.backgroundPosition = "center";
+  };
+  reader.readAsDataURL(file);
+
+  // 2️⃣ Upload file to Firebase Storage
   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
   await uploadBytes(storageRef, file);
 
+  // 3️⃣ Get download URL & save in Firestore
   const downloadURL = await getDownloadURL(storageRef);
-
   const userDocRef = doc(db, "users", userId);
   await updateDoc(userDocRef, { chatBackground: downloadURL });
 
+  // 4️⃣ Set background immediately with the saved URL (optional, sync verification)
   chatContainer.style.backgroundImage = `url(${downloadURL})`;
   chatContainer.style.backgroundSize = "cover";
   chatContainer.style.backgroundPosition = "center";
