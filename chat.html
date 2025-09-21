@@ -43,13 +43,15 @@
       Friend is typing...
     </div>
 
-    <!-- Input -->
+    <!-- Input controls -->
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
     </div>
 
-    <audio id="pingSound" src="sounds/ping.mp3" preload="auto"></audio>
+    <!-- Back button fixed at bottom for mobile -->
+    <button class="mobile-back-btn" onclick="goBack()">⬅ Back</button>
+
     <script type="module" src="chat.js"></script>
   </body>
 </html>
