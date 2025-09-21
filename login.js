@@ -8,19 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById("loginForm");
 
-  // =================== SHOW/HIDE PASSWORD ===================
-  const passwordInput = document.getElementById("password");
-  const togglePassword = document.getElementById("togglePassword");
-
-  togglePassword.addEventListener("click", () => {
-    const type =
-      passwordInput.getAttribute("type") === "password" ? "text" : "password";
-    passwordInput.setAttribute("type", type);
-
-    // Optional: change icon
-    togglePassword.textContent = type === "password" ? "👁️" : "🙈";
-  });
-
   // =================== LOGIN FORM SUBMIT ===================
   form.addEventListener("submit", function (e) {
     e.preventDefault();
