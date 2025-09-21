@@ -40,13 +40,11 @@ const storage = getStorage(app);
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
-const typingIndicator = document.getElementById("typing-indicator");
 const bgUploadInput = document.getElementById("bg-upload");
 const sendBtn = document.getElementById("sendBtn");
 
 // =================== CURRENT USER ===================
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
-const userId = loggedInUser;
 
 // =================== USER COLORS ===================
 const userColors = {
@@ -74,8 +72,8 @@ async function sendMessage() {
   messageInput.value = "";
   sendBtn.disabled = false;
 }
-
 sendBtn.addEventListener("click", sendMessage);
+window.sendMessage = sendMessage;
 
 // =================== EDIT & DELETE ===================
 async function editMessage(id, oldText) {
@@ -100,19 +98,19 @@ window.goBack = goBack;
 // =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
   const msgDiv = document.createElement("div");
-  msgDiv.classList.add("message");
-  msgDiv.classList.add(docData.sender === loggedInUser ? "you" : "friend");
+  msgDiv.classList.add(
+    "message",
+    docData.sender === loggedInUser ? "you" : "friend"
+  );
 
-  // Message text
   const textSpan = document.createElement("span");
-  textSpan.textContent = `${docData.text}`;
+  textSpan.textContent = docData.text;
   textSpan.style.backgroundColor = userColors[docData.sender] || "#CCCCCC";
   textSpan.style.padding = "8px 12px";
   textSpan.style.borderRadius = "15px";
   textSpan.style.display = "inline-block";
   msgDiv.appendChild(textSpan);
 
-  // Timestamp
   const timeSpan = document.createElement("span");
   if (docData.timestamp && docData.timestamp.toDate) {
     const d = docData.timestamp.toDate();
@@ -125,7 +123,6 @@ function renderMessage(docData, id) {
   timeSpan.style.marginLeft = "5px";
   msgDiv.appendChild(timeSpan);
 
-  // Edit/Delete for own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -150,7 +147,6 @@ function renderMessage(docData, id) {
 
 // =================== LOAD MESSAGES ===================
 let lastMessageId = null;
-
 const messagesQuery = query(
   collection(db, "messages"),
   orderBy("timestamp", "asc")
@@ -162,7 +158,6 @@ onSnapshot(messagesQuery, (snapshot) => {
       const data = change.doc.data();
       renderMessage(data, change.doc.id);
 
-      // Play ping & notification only for new messages
       if (change.doc.id !== lastMessageId && data.sender !== loggedInUser) {
         pingSound.play().catch(() => {});
         showNotification(`${data.sender}: ${data.text}`);
@@ -180,17 +175,28 @@ function showNotification(text) {
   notif.innerText = text;
   notificationContainer.appendChild(notif);
 
-  setTimeout(() => {
-    notif.remove();
-  }, 3000);
+  setTimeout(() => notif.remove(), 3000);
 }
 
-// =================== UPLOAD BACKGROUND ===================
+// =================== GLOBAL CHAT BACKGROUND ===================
+const chatBgRef = doc(db, "chatSettings", "global");
+
+onSnapshot(chatBgRef, (snap) => {
+  if (snap.exists()) {
+    const bgURL = snap.data().background;
+    if (bgURL) {
+      chatContainer.style.backgroundImage = `url(${bgURL})`;
+      chatContainer.style.backgroundSize = "cover";
+      chatContainer.style.backgroundPosition = "center";
+    }
+  }
+});
+
+// Upload new background
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Render immediately
   const reader = new FileReader();
   reader.onload = (ev) => {
     chatContainer.style.backgroundImage = `url(${ev.target.result})`;
@@ -199,25 +205,18 @@ bgUploadInput.addEventListener("change", async (e) => {
   };
   reader.readAsDataURL(file);
 
-  // Upload to Firebase
-  const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
+  const storageRef = ref(storage, `chat-backgrounds/global-${Date.now()}`);
   await uploadBytes(storageRef, file);
   const downloadURL = await getDownloadURL(storageRef);
 
-  const userDocRef = doc(db, "users", userId);
-  await updateDoc(userDocRef, { chatBackground: downloadURL });
-
-  chatContainer.style.backgroundImage = `url(${downloadURL})`;
-  chatContainer.style.backgroundSize = "cover";
-  chatContainer.style.backgroundPosition = "center";
+  await updateDoc(chatBgRef, { background: downloadURL });
 });
 
-// =================== LOAD BACKGROUND ===================
-async function loadUserBackground() {
-  const userDocRef = doc(db, "users", userId);
-  const userSnap = await getDoc(userDocRef);
-  if (userSnap.exists()) {
-    const bgURL = userSnap.data().chatBackground;
+// =================== INITIALIZE BACKGROUND ===================
+async function loadInitialBackground() {
+  const snap = await getDoc(chatBgRef);
+  if (snap.exists()) {
+    const bgURL = snap.data().background;
     if (bgURL) {
       chatContainer.style.backgroundImage = `url(${bgURL})`;
       chatContainer.style.backgroundSize = "cover";
@@ -225,9 +224,9 @@ async function loadUserBackground() {
     }
   }
 }
-await loadUserBackground();
+loadInitialBackground();
 
-// =================== HIDE LOADER AFTER INITIAL LOAD ===================
+// =================== HIDE LOADER ===================
 const loader = document.getElementById("loader");
 if (loader) loader.style.display = "none";
 
