@@ -9,7 +9,6 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="chat.css" />
-    <link rel="icon" href="images/logo.png" /> <!-- Tab icon -->
   </head>
   <body>
     <!-- Loader -->
@@ -22,25 +21,37 @@
       <button class="back-btn" onclick="goBack()">⬅ Back</button>
       ⚡ Funky Chat ⚡
       <span id="usernameDisplay"></span>
-      <label for="bg-upload" class="custom-upload-btn">📁 Choose Background:</label>
-      <input type="file" id="bg-upload" accept="image/*" style="display: none" />
+      <label for="bg-upload" class="custom-upload-btn"
+        >📁 Choose Background:</label
+      >
+      <input
+        type="file"
+        id="bg-upload"
+        accept="image/*"
+        style="display: none"
+      />
     </header>
 
     <!-- Notifications -->
     <div id="notification-container"></div>
 
-    <!-- Chat wrapper -->
-    <div class="chat-container-wrapper">
-      <div class="chat-container" id="chat-container"></div>
+    <!-- Chat container -->
+    <div class="chat-container" id="chat-container"></div>
 
-      <!-- Typing indicator -->
-      <div id="typing-indicator" class="typing-indicator">Friend is typing...</div>
+    <!-- Typing indicator -->
+    <div id="typing-indicator" class="typing-indicator">
+      Friend is typing...
+    </div>
 
-      <!-- Input controls -->
-      <div class="chat-input">
-        <input type="text" id="messageInput" placeholder="Type a message..." />
-        <button id="sendBtn">Send</button>
-      </div>
+    <!-- Input controls -->
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button id="sendBtn">Send</button>
+    </div>
+
+    <!-- Bottom sticky back button -->
+    <div class="bottom-header">
+      <button class="back-btn" onclick="goBack()">⬅ Back</button>
     </div>
 
     <!-- Import Firebase logic -->
