@@ -40,16 +40,12 @@ const storage = getStorage(app);
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
-const typingIndicator = document.getElementById("typing-indicator");
 const bgUploadInput = document.getElementById("bg-upload");
 const sendBtn = document.getElementById("sendBtn");
 
 // Current user
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
 const userId = loggedInUser; // or Firebase Auth UID
-
-// =================== PING SOUND ===================
-const pingSound = new Audio("sounds/ping.mp3"); // make sure ping.mp3 is in the same folder
 
 // =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
@@ -61,7 +57,7 @@ function renderMessage(docData, id) {
 
   msgDiv.innerText = `${docData.sender}: ${docData.text}`;
 
-  // Add edit/delete buttons for own messages
+  // Add edit/delete for your own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -80,6 +76,7 @@ function renderMessage(docData, id) {
     msgDiv.appendChild(actionsDiv);
   }
 
+  // Append to chat container
   chatContainer.appendChild(msgDiv);
 }
 
@@ -91,15 +88,25 @@ const messagesQuery = query(
 
 onSnapshot(messagesQuery, (snapshot) => {
   chatContainer.innerHTML = "";
-  snapshot.forEach((doc) => {
-    renderMessage(doc.data(), doc.id);
 
-    // Play ping sound for messages from others
-    if (doc.data().sender !== loggedInUser) {
-      pingSound.currentTime = 0;
-      pingSound.play().catch((err) => console.log(err));
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    renderMessage(data, doc.id);
+
+    // Play ping & show notification if message is from friend
+    if (data.sender !== loggedInUser) {
+      const pingSound = new Audio("sounds/ping.mp3");
+      pingSound.play();
+
+      if (Notification.permission === "granted") {
+        new Notification(`New message from ${data.sender}`, {
+          body: data.text || "📢 New message",
+          icon: "favicon.ico",
+        });
+      }
     }
   });
+
   chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
@@ -142,25 +149,26 @@ bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Render immediately using FileReader
+  // Render immediately
   const reader = new FileReader();
-  reader.onload = (event) => {
+  reader.onload = function (event) {
     chatContainer.style.backgroundImage = `url(${event.target.result})`;
     chatContainer.style.backgroundSize = "cover";
     chatContainer.style.backgroundPosition = "center";
   };
   reader.readAsDataURL(file);
 
-  // Upload to Firebase Storage
+  // Upload to Firebase
   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
   await uploadBytes(storageRef, file);
 
-  // Save URL in Firestore
   const downloadURL = await getDownloadURL(storageRef);
   const userDocRef = doc(db, "users", userId);
   await updateDoc(userDocRef, { chatBackground: downloadURL });
 
   chatContainer.style.backgroundImage = `url(${downloadURL})`;
+  chatContainer.style.backgroundSize = "cover";
+  chatContainer.style.backgroundPosition = "center";
 });
 
 // =================== LOAD USER BACKGROUND ===================
@@ -176,16 +184,21 @@ async function loadUserBackground() {
     }
   }
 }
+loadUserBackground();
 
-// =================== GLOBAL EXPOSURE ===================
+// =================== REQUEST NOTIFICATION PERMISSION ===================
+if ("Notification" in window) {
+  Notification.requestPermission();
+}
+
+// =================== EXPOSE FUNCTIONS ===================
 window.sendMessage = sendMessage;
 window.goBack = goBack;
 
-// =================== INITIAL LOAD ===================
-loadUserBackground();
-
-// =================== BUTTON EVENTS ===================
+// =================== SEND BUTTON ===================
 sendBtn.addEventListener("click", sendMessage);
-messageInput.addEventListener("keydown", (e) => {
+
+// =================== ENTER KEY SEND ===================
+messageInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
