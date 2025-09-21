@@ -40,7 +40,6 @@ const storage = getStorage(app);
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
-const typingIndicator = document.getElementById("typing-indicator");
 const bgUploadInput = document.getElementById("bg-upload");
 const sendBtn = document.getElementById("sendBtn");
 
@@ -57,7 +56,7 @@ const userColors = {
 };
 
 // =================== NOTIFICATION SOUND ===================
-const pingSound = new Audio("sounds/ping.mp3");
+const pingSound = document.getElementById("pingSound");
 
 // =================== SEND MESSAGE ===================
 async function sendMessage() {
@@ -74,7 +73,6 @@ async function sendMessage() {
   messageInput.value = "";
   sendBtn.disabled = false;
 }
-
 sendBtn.addEventListener("click", sendMessage);
 
 // =================== EDIT & DELETE ===================
@@ -84,7 +82,6 @@ async function editMessage(id, oldText) {
     await updateDoc(doc(db, "messages", id), { text: newText.trim() });
   }
 }
-
 async function deleteMessage(id) {
   if (confirm("Delete this message?")) {
     await deleteDoc(doc(db, "messages", id));
@@ -102,30 +99,23 @@ function renderMessage(docData, id) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("message");
   msgDiv.classList.add(docData.sender === loggedInUser ? "you" : "friend");
+  msgDiv.classList.add(docData.sender); // username class
 
-  // Message text
   const textSpan = document.createElement("span");
-  textSpan.textContent = `${docData.text}`;
+  textSpan.textContent = docData.text;
   textSpan.style.backgroundColor = userColors[docData.sender] || "#CCCCCC";
-  textSpan.style.padding = "8px 12px";
-  textSpan.style.borderRadius = "15px";
-  textSpan.style.display = "inline-block";
   msgDiv.appendChild(textSpan);
 
-  // Timestamp
   const timeSpan = document.createElement("span");
-  if (docData.timestamp && docData.timestamp.toDate) {
+  if (docData.timestamp?.toDate) {
     const d = docData.timestamp.toDate();
     timeSpan.textContent = ` ${d.getHours()}:${d
       .getMinutes()
       .toString()
       .padStart(2, "0")}`;
   }
-  timeSpan.style.fontSize = "12px";
-  timeSpan.style.marginLeft = "5px";
   msgDiv.appendChild(timeSpan);
 
-  // Edit/Delete for own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -145,29 +135,25 @@ function renderMessage(docData, id) {
   }
 
   chatContainer.appendChild(msgDiv);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight; // auto scroll bottom
 }
 
 // =================== LOAD MESSAGES ===================
 let lastMessageId = null;
-
 const messagesQuery = query(
   collection(db, "messages"),
   orderBy("timestamp", "asc")
 );
-
 onSnapshot(messagesQuery, (snapshot) => {
   snapshot.docChanges().forEach((change) => {
     if (change.type === "added") {
       const data = change.doc.data();
       renderMessage(data, change.doc.id);
 
-      // Play ping & notification only for new messages (not on page load)
       if (change.doc.id !== lastMessageId && data.sender !== loggedInUser) {
         pingSound.play().catch(() => {});
         showNotification(`${data.sender}: ${data.text}`);
       }
-
       lastMessageId = change.doc.id;
     }
   });
@@ -179,18 +165,14 @@ function showNotification(text) {
   notif.classList.add("notification");
   notif.innerText = text;
   notificationContainer.appendChild(notif);
-
-  setTimeout(() => {
-    notif.remove();
-  }, 3000);
+  setTimeout(() => notif.remove(), 3000);
 }
 
-// =================== UPLOAD BACKGROUND ===================
+// =================== BACKGROUND UPLOAD ===================
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Render immediately
   const reader = new FileReader();
   reader.onload = (ev) => {
     chatContainer.style.backgroundImage = `url(${ev.target.result})`;
@@ -199,11 +181,9 @@ bgUploadInput.addEventListener("change", async (e) => {
   };
   reader.readAsDataURL(file);
 
-  // Upload to Firebase
   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
   await uploadBytes(storageRef, file);
   const downloadURL = await getDownloadURL(storageRef);
-
   const userDocRef = doc(db, "users", userId);
   await updateDoc(userDocRef, { chatBackground: downloadURL });
 

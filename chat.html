@@ -16,14 +16,11 @@
       <div class="spinner"></div>
     </div>
 
-    <!-- Sticky Header -->
-    <header class="sticky-header">
-      <button class="back-btn" onclick="goBack()">⬅ Back</button>
+    <!-- Header -->
+    <header>
       ⚡ Funky Chat ⚡
       <span id="usernameDisplay"></span>
-      <label for="bg-upload" class="custom-upload-btn"
-        >📁 Choose Background:</label
-      >
+      <label for="bg-upload" class="custom-upload-btn">📁 Background</label>
       <input
         type="file"
         id="bg-upload"
@@ -32,19 +29,20 @@
       />
     </header>
 
-    <!-- Notifications -->
-    <div id="notification-container"></div>
-
     <!-- Chat container -->
     <div class="chat-container" id="chat-container"></div>
+
+    <!-- Notifications -->
+    <div id="notification-container"></div>
 
     <!-- Typing indicator -->
     <div id="typing-indicator" class="typing-indicator">
       Friend is typing...
     </div>
 
-    <!-- Input controls -->
-    <div class="chat-input">
+    <!-- Fixed bottom controls -->
+    <div class="bottom-controls">
+      <button class="back-btn" onclick="goBack()">⬅ Back</button>
       <input type="text" id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
     </div>
