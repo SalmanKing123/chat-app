@@ -46,11 +46,13 @@
     <!-- Input controls -->
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message..." />
-      <button id="voiceBtn">🎤</button>
-      <button id="sendBtn">Send</button>
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
 
     <!-- Import Firebase logic -->
     <script type="module" src="chat.js"></script>
+
+    <!-- Optional: ping sound -->
+    <audio id="pingSound" src="ping.mp3" preload="auto"></audio>
   </body>
 </html>
