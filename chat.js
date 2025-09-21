@@ -39,64 +39,18 @@ const storage = getStorage(app);
 // =================== DOM ELEMENTS ===================
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
-const voiceBtn = document.getElementById("voiceBtn");
 const bgUploadInput = document.getElementById("bg-upload");
+
+// Add voice button dynamically
+const chatInputDiv = document.querySelector(".chat-input");
+const voiceBtn = document.createElement("button");
+voiceBtn.id = "voiceBtn";
+voiceBtn.textContent = "🎤";
+chatInputDiv.appendChild(voiceBtn);
 
 // Current user
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
-const userId = loggedInUser; // or Firebase Auth UID
-
-// =================== SEND MESSAGE ===================
-async function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text) return;
-  await addDoc(collection(db, "messages"), {
-    sender: loggedInUser,
-    text,
-    timestamp: serverTimestamp(),
-  });
-  messageInput.value = "";
-}
-sendBtn.addEventListener("click", sendMessage);
-
-// =================== VOICE MESSAGES ===================
-let mediaRecorder;
-let audioChunks = [];
-
-voiceBtn.addEventListener("click", async () => {
-  if (!mediaRecorder || mediaRecorder.state === "inactive") {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-
-    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-      audioChunks = [];
-
-      const audioRef = ref(
-        storage,
-        `voice-messages/${loggedInUser}-${Date.now()}.webm`
-      );
-      await uploadBytes(audioRef, audioBlob);
-      const downloadURL = await getDownloadURL(audioRef);
-
-      await addDoc(collection(db, "messages"), {
-        sender: loggedInUser,
-        text: "[Voice Message]",
-        audio: downloadURL,
-        timestamp: serverTimestamp(),
-      });
-    };
-
-    mediaRecorder.start();
-    voiceBtn.textContent = "⏹️ Stop";
-  } else {
-    mediaRecorder.stop();
-    voiceBtn.textContent = "🎤";
-  }
-});
+const userId = loggedInUser;
 
 // =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
@@ -105,9 +59,11 @@ function renderMessage(docData, id) {
     "message",
     docData.sender === loggedInUser ? "you" : "friend"
   );
-  msgDiv.innerText = `${docData.sender}: ${docData.text}`;
 
-  // Add audio player if message has audio
+  // Text
+  msgDiv.innerText = `${docData.sender}: ${docData.text || ""}`;
+
+  // Audio
   if (docData.audio) {
     const audioEl = document.createElement("audio");
     audioEl.src = docData.audio;
@@ -137,9 +93,10 @@ function renderMessage(docData, id) {
   }
 
   chatContainer.appendChild(msgDiv);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// =================== LOAD MESSAGES REAL-TIME ===================
+// =================== LOAD MESSAGES ===================
 const messagesQuery = query(
   collection(db, "messages"),
   orderBy("timestamp", "asc")
@@ -147,8 +104,25 @@ const messagesQuery = query(
 onSnapshot(messagesQuery, (snapshot) => {
   chatContainer.innerHTML = "";
   snapshot.forEach((doc) => renderMessage(doc.data(), doc.id));
-  chatContainer.scrollTop = chatContainer.scrollHeight;
 });
+
+// =================== SEND MESSAGE ===================
+async function sendMessage() {
+  const text = messageInput.value.trim();
+  if (!text) return;
+
+  try {
+    await addDoc(collection(db, "messages"), {
+      sender: loggedInUser,
+      text,
+      timestamp: serverTimestamp(),
+    });
+    messageInput.value = "";
+  } catch (err) {
+    console.error("Error sending message:", err);
+  }
+}
+window.sendMessage = sendMessage;
 
 // =================== EDIT/DELETE ===================
 async function editMessage(id, oldText) {
@@ -157,57 +131,101 @@ async function editMessage(id, oldText) {
     await updateDoc(doc(db, "messages", id), { text: newText.trim() });
   }
 }
+
 async function deleteMessage(id) {
   if (confirm("Delete this message?")) {
     await deleteDoc(doc(db, "messages", id));
   }
 }
 
-// =================== BACK ===================
+// =================== GO BACK ===================
 function goBack() {
   window.location.href = "index.html";
 }
 window.goBack = goBack;
 
-// =================== CHAT BACKGROUND ===================
+// =================== UPLOAD BACKGROUND ===================
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Render immediately
+  // Show locally
   const reader = new FileReader();
-  reader.onload = (ev) => {
-    chatContainer.style.backgroundImage = `url(${ev.target.result})`;
+  reader.onload = (event) => {
+    chatContainer.style.backgroundImage = `url(${event.target.result})`;
     chatContainer.style.backgroundSize = "cover";
     chatContainer.style.backgroundPosition = "center";
   };
   reader.readAsDataURL(file);
 
-  // Upload to Firebase Storage
-  const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
-  await uploadBytes(storageRef, file);
-
-  // Save in Firestore
-  const downloadURL = await getDownloadURL(storageRef);
-  const userDocRef = doc(db, "users", userId);
-  await updateDoc(userDocRef, { chatBackground: downloadURL });
-
-  chatContainer.style.backgroundImage = `url(${downloadURL})`;
-  chatContainer.style.backgroundSize = "cover";
-  chatContainer.style.backgroundPosition = "center";
+  // Upload
+  try {
+    const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    await updateDoc(doc(db, "users", userId), { chatBackground: downloadURL });
+    chatContainer.style.backgroundImage = `url(${downloadURL})`;
+  } catch (err) {
+    console.error("Error uploading background:", err);
+  }
 });
 
-// =================== LOAD USER BACKGROUND ===================
 async function loadUserBackground() {
-  const userDocRef = doc(db, "users", userId);
-  const userSnap = await getDoc(userDocRef);
-  if (userSnap.exists()) {
-    const bgURL = userSnap.data().chatBackground;
-    if (bgURL) {
+  try {
+    const userSnap = await getDoc(doc(db, "users", userId));
+    if (userSnap.exists() && userSnap.data().chatBackground) {
+      const bgURL = userSnap.data().chatBackground;
       chatContainer.style.backgroundImage = `url(${bgURL})`;
       chatContainer.style.backgroundSize = "cover";
       chatContainer.style.backgroundPosition = "center";
     }
+  } catch (err) {
+    console.error("Error loading background:", err);
   }
 }
 loadUserBackground();
+
+// =================== VOICE MESSAGES ===================
+let mediaRecorder;
+let audioChunks = [];
+
+voiceBtn.addEventListener("click", async () => {
+  if (!mediaRecorder || mediaRecorder.state === "inactive") {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+
+      audioChunks = [];
+      mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+      mediaRecorder.onstop = async () => {
+        try {
+          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+          const audioRef = ref(
+            storage,
+            `voice-messages/${loggedInUser}-${Date.now()}.webm`
+          );
+          await uploadBytes(audioRef, audioBlob);
+          const downloadURL = await getDownloadURL(audioRef);
+
+          await addDoc(collection(db, "messages"), {
+            sender: loggedInUser,
+            text: "[Voice Message]",
+            audio: downloadURL,
+            timestamp: serverTimestamp(),
+          });
+        } catch (err) {
+          console.error("Error sending voice message:", err);
+        }
+      };
+
+      mediaRecorder.start();
+      voiceBtn.textContent = "⏹️ Stop";
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+    }
+  } else {
+    mediaRecorder.stop();
+    voiceBtn.textContent = "🎤";
+  }
+});
