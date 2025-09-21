@@ -77,15 +77,15 @@ header .back-btn:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 5px;
 }
 .message {
   max-width: 70%;
-  padding: 10px 14px;
-  border-radius: 12px;
-  line-height: 1.4;
+  padding: 8px 12px;
+  border-radius: 8px;
+  /* line-height: 1.4; */
   word-wrap: break-word;
-  position: relative;
+  /* position: relative; */
   font-size: 15px;
 }
 .message.you {

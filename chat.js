@@ -1,17 +1,19 @@
-// Import Firebase SDKs
+// =================== IMPORTS ===================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import {
   getFirestore,
   collection,
   addDoc,
-  getDocs,
   onSnapshot,
   updateDoc,
   deleteDoc,
   doc,
+  query,
+  orderBy,
+  serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-// Your Firebase config
+// =================== FIREBASE CONFIG ===================
 const firebaseConfig = {
   apiKey: "AIzaSyD0mDWg5NLpS1X1TrJ09QSZwTbV8rOdLpI",
   authDomain: "chat-app-cc84a.firebaseapp.com",
@@ -22,11 +24,11 @@ const firebaseConfig = {
   measurementId: "G-PR6YGH0LLL",
 };
 
-// Init Firebase
+// =================== INIT ===================
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Get elements
+// =================== DOM ELEMENTS ===================
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
@@ -35,14 +37,14 @@ const typingIndicator = document.getElementById("typing-indicator");
 // Current user
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
 
-// =================== RENDER ===================
+// =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("message");
   msgDiv.classList.add(docData.sender === loggedInUser ? "you" : "friend");
   msgDiv.innerText = `${docData.sender}: ${docData.text}`;
 
-  // If it's your message, add edit/delete buttons
+  // Add edit/delete for your own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -64,13 +66,18 @@ function renderMessage(docData, id) {
   chatContainer.appendChild(msgDiv);
 }
 
-// =================== LOAD MESSAGES (REAL-TIME) ===================
-onSnapshot(collection(db, "messages"), (snapshot) => {
+// =================== LOAD MESSAGES (REAL-TIME, ORDERED) ===================
+const messagesQuery = query(
+  collection(db, "messages"),
+  orderBy("timestamp", "asc") // oldest → newest
+);
+
+onSnapshot(messagesQuery, (snapshot) => {
   chatContainer.innerHTML = "";
   snapshot.forEach((doc) => {
     renderMessage(doc.data(), doc.id);
   });
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight; // auto scroll down
 });
 
 // =================== SEND ===================
@@ -81,7 +88,7 @@ async function sendMessage() {
   await addDoc(collection(db, "messages"), {
     sender: loggedInUser,
     text: text,
-    timestamp: Date.now(),
+    timestamp: serverTimestamp(), // ✅ correct ordering
   });
 
   messageInput.value = "";
@@ -109,6 +116,6 @@ function goBack() {
   window.location.href = "index.html";
 }
 
-// Expose functions globally for buttons
+// Expose functions globally
 window.sendMessage = sendMessage;
 window.goBack = goBack;
