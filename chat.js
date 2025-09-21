@@ -11,7 +11,14 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  getDoc,
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
 
 // =================== FIREBASE CONFIG ===================
 const firebaseConfig = {
@@ -27,15 +34,18 @@ const firebaseConfig = {
 // =================== INIT ===================
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // =================== DOM ELEMENTS ===================
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
 const typingIndicator = document.getElementById("typing-indicator");
+const bgUploadInput = document.getElementById("bg-upload");
 
 // Current user
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
+const userId = loggedInUser; // or Firebase Auth UID
 
 // =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
@@ -44,7 +54,6 @@ function renderMessage(docData, id) {
   msgDiv.classList.add(docData.sender === loggedInUser ? "you" : "friend");
   msgDiv.innerText = `${docData.sender}: ${docData.text}`;
 
-  // Add edit/delete for your own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -69,7 +78,7 @@ function renderMessage(docData, id) {
 // =================== LOAD MESSAGES (REAL-TIME, ORDERED) ===================
 const messagesQuery = query(
   collection(db, "messages"),
-  orderBy("timestamp", "asc") // oldest → newest
+  orderBy("timestamp", "asc")
 );
 
 onSnapshot(messagesQuery, (snapshot) => {
@@ -77,7 +86,7 @@ onSnapshot(messagesQuery, (snapshot) => {
   snapshot.forEach((doc) => {
     renderMessage(doc.data(), doc.id);
   });
-  chatContainer.scrollTop = chatContainer.scrollHeight; // auto scroll down
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
 // =================== SEND ===================
@@ -88,7 +97,7 @@ async function sendMessage() {
   await addDoc(collection(db, "messages"), {
     sender: loggedInUser,
     text: text,
-    timestamp: serverTimestamp(), // ✅ correct ordering
+    timestamp: serverTimestamp(),
   });
 
   messageInput.value = "";
@@ -119,3 +128,38 @@ function goBack() {
 // Expose functions globally
 window.sendMessage = sendMessage;
 window.goBack = goBack;
+
+// =================== UPLOAD CHAT BACKGROUND ===================
+bgUploadInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
+  await uploadBytes(storageRef, file);
+
+  const downloadURL = await getDownloadURL(storageRef);
+
+  const userDocRef = doc(db, "users", userId);
+  await updateDoc(userDocRef, { chatBackground: downloadURL });
+
+  chatContainer.style.backgroundImage = `url(${downloadURL})`;
+  chatContainer.style.backgroundSize = "cover";
+  chatContainer.style.backgroundPosition = "center";
+});
+
+// =================== LOAD USER BACKGROUND ON PAGE LOAD ===================
+async function loadUserBackground() {
+  const userDocRef = doc(db, "users", userId);
+  const userSnap = await getDoc(userDocRef);
+  if (userSnap.exists()) {
+    const bgURL = userSnap.data().chatBackground;
+    if (bgURL) {
+      chatContainer.style.backgroundImage = `url(${bgURL})`;
+      chatContainer.style.backgroundSize = "cover";
+      chatContainer.style.backgroundPosition = "center";
+    }
+  }
+}
+
+// Call on page load
+loadUserBackground();
