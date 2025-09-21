@@ -40,16 +40,15 @@ const storage = getStorage(app);
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
-const typingIndicator = document.getElementById("typing-indicator");
 const bgUploadInput = document.getElementById("bg-upload");
 const sendBtn = document.getElementById("sendBtn");
 
 // Current user
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
-const userId = loggedInUser;
+const userId = loggedInUser; // or Firebase Auth UID
 
-// =================== GLOBALS ===================
-const notifiedMessages = new Set(); // track notifications
+// =================== TRACK LAST TIMESTAMP ===================
+let lastTimestamp = null;
 
 // =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
@@ -59,19 +58,10 @@ function renderMessage(docData, id) {
     docData.sender === loggedInUser ? "you" : "friend"
   );
 
-  msgDiv.innerText = `${docData.sender}: ${docData.text}`;
+  // Message content
+  msgDiv.innerText = `${docData.sender}: ${docData.text || ""}`;
 
-  // Render audio if exists
-  if (docData.audio) {
-    const audioEl = document.createElement("audio");
-    audioEl.src = docData.audio;
-    audioEl.controls = true;
-    audioEl.style.display = "block";
-    audioEl.style.marginTop = "5px";
-    msgDiv.appendChild(audioEl);
-  }
-
-  // Add edit/delete for own messages
+  // Edit/Delete for your own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -93,7 +83,7 @@ function renderMessage(docData, id) {
   chatContainer.appendChild(msgDiv);
 }
 
-// =================== LOAD MESSAGES (REAL-TIME) ===================
+// =================== LOAD MESSAGES (REAL-TIME, ORDERED) ===================
 const messagesQuery = query(
   collection(db, "messages"),
   orderBy("timestamp", "asc")
@@ -106,9 +96,12 @@ onSnapshot(messagesQuery, (snapshot) => {
     const data = doc.data();
     renderMessage(data, doc.id);
 
-    // Notifications for new messages only once
-    if (data.sender !== loggedInUser && !notifiedMessages.has(doc.id)) {
-      // Play ping sound
+    // Only fire ping/notification for new messages from others
+    if (
+      data.sender !== loggedInUser &&
+      (!lastTimestamp || data.timestamp?.toMillis() > lastTimestamp)
+    ) {
+      // Ping sound
       const ping = new Audio("sounds/ping.mp3");
       ping.play();
 
@@ -119,8 +112,12 @@ onSnapshot(messagesQuery, (snapshot) => {
           icon: "favicon.ico",
         });
       }
+    }
 
-      notifiedMessages.add(doc.id);
+    // Update lastTimestamp
+    if (data.timestamp) {
+      const ts = data.timestamp.toMillis();
+      if (!lastTimestamp || ts > lastTimestamp) lastTimestamp = ts;
     }
   });
 
@@ -134,14 +131,14 @@ async function sendMessage() {
 
   await addDoc(collection(db, "messages"), {
     sender: loggedInUser,
-    text,
+    text: text,
     timestamp: serverTimestamp(),
   });
 
   messageInput.value = "";
 }
 
-// =================== EDIT / DELETE ===================
+// =================== EDIT ===================
 async function editMessage(id, oldText) {
   const newText = prompt("Edit your message:", oldText);
   if (newText && newText.trim() !== "") {
@@ -149,6 +146,7 @@ async function editMessage(id, oldText) {
   }
 }
 
+// =================== DELETE ===================
 async function deleteMessage(id) {
   if (confirm("Delete this message?")) {
     await deleteDoc(doc(db, "messages", id));
@@ -160,11 +158,22 @@ function goBack() {
   window.location.href = "index.html";
 }
 
+// Expose functions globally
+window.sendMessage = sendMessage;
+window.goBack = goBack;
+
+// =================== SEND BUTTON EVENT ===================
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
 // =================== UPLOAD CHAT BACKGROUND ===================
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  // Render immediately using FileReader
   const reader = new FileReader();
   reader.onload = (event) => {
     chatContainer.style.backgroundImage = `url(${event.target.result})`;
@@ -173,9 +182,11 @@ bgUploadInput.addEventListener("change", async (e) => {
   };
   reader.readAsDataURL(file);
 
+  // Upload file to Firebase Storage
   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
   await uploadBytes(storageRef, file);
 
+  // Save in Firestore
   const downloadURL = await getDownloadURL(storageRef);
   const userDocRef = doc(db, "users", userId);
   await updateDoc(userDocRef, { chatBackground: downloadURL });
@@ -198,16 +209,9 @@ async function loadUserBackground() {
     }
   }
 }
-
-// =================== PERMISSIONS ===================
-if (Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
-
-// =================== INIT ===================
 loadUserBackground();
 
-// =================== EVENT LISTENERS ===================
-sendBtn.addEventListener("click", sendMessage);
-window.sendMessage = sendMessage;
-window.goBack = goBack;
+// =================== NOTIFICATION PERMISSION ===================
+if ("Notification" in window && Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
