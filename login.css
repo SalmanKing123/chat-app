@@ -1,200 +1,148 @@
-/* ---------- Animated Rainbow Background ---------- */
+/* =================== VARIABLES =================== */
+:root {
+  --bg-gradient: linear-gradient(135deg, #ff00c8, #00ffe7);
+  --text-color: #fff;
+  --card-bg: rgba(0, 0, 0, 0.5);
+  --input-bg: rgba(255, 255, 255, 0.1);
+  --input-focus: #ffea00;
+  --button-bg: #ffea00;
+  --button-hover: #fff700;
+  --toggle-color: #ff00c8;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/* =================== BODY =================== */
 body {
   margin: 0;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   font-family: "Bungee", cursive;
-  background: linear-gradient(
-    45deg,
-    #ff3cac,
-    #784ba0,
-    #2b86c5,
-    #00ffcc,
-    #ffdb58
-  );
-  background-size: 1000% 1000%;
-  animation: rainbowBG 20s ease infinite;
-}
-
-@keyframes rainbowBG {
-  0% {
-    background-position: 0% 50%;
-  }
-  25% {
-    background-position: 50% 100%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  75% {
-    background-position: 50% 0%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* ---------- Container ---------- */
-.login-container {
+  background: var(--bg-gradient);
+  color: var(--text-color);
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
-/* ---------- Funky Card ---------- */
+/* =================== LOGIN CONTAINER =================== */
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+/* =================== LOGIN CARD =================== */
 .login-card {
-  background: linear-gradient(135deg, #fff, #ffeb3b, #ff5722);
-  padding: 50px 40px;
-  border-radius: 35px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 20px #ff3cac inset;
-  text-align: center;
-  width: 400px;
-  transform: rotate(-1deg);
-  animation: shakeCard 3s infinite alternate;
-}
-
-@keyframes shakeCard {
-  0% {
-    transform: rotate(-1deg);
-  }
-  25% {
-    transform: rotate(2deg);
-  }
-  50% {
-    transform: rotate(-2deg);
-  }
-  75% {
-    transform: rotate(1deg);
-  }
-  100% {
-    transform: rotate(-1deg);
-  }
-}
-
-/* ---------- Title ---------- */
-.login-card h1 {
-  margin-bottom: 40px;
-  font-size: 38px;
-  color: #fff;
-  text-shadow: 2px 2px 10px #ff00ff, -2px -2px 10px #00ffff;
-  animation: bounceTitle 1.5s infinite;
-}
-
-@keyframes bounceTitle {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-15px) rotate(-5deg);
-  }
-}
-
-/* ---------- Inputs ---------- */
-.login-card input {
-  width: 100%;
-  padding: 16px 20px;
-  margin-bottom: 25px;
-  border: 3px solid #fff;
-  border-radius: 25px;
-  font-size: 18px;
-  outline: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  text-shadow: 0 0 5px #000;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5),
-    0 0 10px rgba(0, 0, 0, 0.2) inset;
-  transition: 0.3s;
-}
-
-.login-card input:focus {
-  border-color: #ff00ff;
-  box-shadow: 0 0 25px #ff00ff, 0 0 15px #00ffff inset;
-  background: rgba(255, 255, 255, 0.25);
-  transform: scale(1.05);
-}
-
-/* ---------- Password Wrapper ---------- */
-.password-wrapper {
-  position: relative;
-}
-
-/* Password icon */
-.password-wrapper input {
-  padding-right: 50px;
-}
-
-.toggle-password {
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 24px;
-  cursor: pointer;
-  color: #fff;
-  text-shadow: 0 0 10px #ff0, 0 0 5px #f0f;
-  transition: 0.3s;
-}
-
-.toggle-password:hover {
-  transform: translateY(-50%) scale(1.3) rotate(10deg);
-  text-shadow: 0 0 20px #0ff, 0 0 10px #f0f;
-}
-
-/* ---------- Button ---------- */
-.login-card button {
-  width: 100%;
-  padding: 18px;
-  border: none;
+  background: var(--card-bg);
   border-radius: 30px;
-  font-size: 22px;
-  font-weight: bold;
-  color: #fff;
-  cursor: pointer;
-  background: linear-gradient(45deg, #ff00ff, #00ffff, #ffdd00, #ff0066);
-  background-size: 300% 300%;
-  animation: buttonGradient 3s ease infinite;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px #ff00ff inset;
-  transition: 0.3s;
+  padding: 40px 30px;
+  box-shadow: 0 0 20px var(--shadow-color), 0 0 40px #ff00c8 inset;
+  text-align: center;
+  position: relative;
+  animation: popIn 0.7s ease;
 }
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* =================== TITLE =================== */
+.login-card h1 {
+  font-size: 50px;
+  margin-bottom: 40px;
+  color: #ffea00;
+  text-shadow: 2px 2px #000, 0 0 10px #ff00c8;
+  transform: rotate(-3deg);
+}
+
+/* =================== INPUTS =================== */
 .login-card input {
   width: 100%;
-  padding: 16px 20px;
+  padding: 18px 20px;
   margin-bottom: 25px;
-  border: 3px solid #fff;
   border-radius: 25px;
+  border: 3px solid #fff;
+  background: var(--input-bg);
+  color: var(--text-color);
   font-size: 18px;
   outline: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
   text-shadow: 0 0 5px #000;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5),
-    0 0 10px rgba(0, 0, 0, 0.2) inset;
-  transition: 0.3s;
-
-  /* ---- Fix overflow ---- */
+  box-shadow: 0 0 10px #ff00c8 inset;
+  transition: all 0.3s;
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.login-card button:hover {
-  transform: scale(1.1) rotate(-3deg);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 25px #00ffff inset;
+.login-card input:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 15px var(--input-focus) inset;
 }
 
-@keyframes buttonGradient {
-  0% {
-    background-position: 0% 50%;
+/* =================== PASSWORD WRAPPER =================== */
+.password-wrapper {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 22px;
+  color: var(--toggle-color);
+  transition: transform 0.3s;
+}
+
+.toggle-password:hover {
+  transform: translateY(-50%) scale(1.3) rotate(-15deg);
+}
+
+/* =================== LOGIN BUTTON =================== */
+button#loginBtn {
+  width: 100%;
+  padding: 18px;
+  font-size: 22px;
+  border: none;
+  border-radius: 30px;
+  background: var(--button-bg);
+  color: black;
+  cursor: pointer;
+  text-shadow: 1px 1px #000;
+  box-shadow: 0 0 15px #ff00c8, 0 0 10px #ffea00 inset;
+  transition: all 0.3s;
+}
+
+button#loginBtn:hover {
+  transform: scale(1.1) rotate(-5deg);
+  background: var(--button-hover);
+  box-shadow: 0 0 25px #ff00c8, 0 0 15px #ffea00 inset;
+}
+
+/* =================== MOBILE RESPONSIVE =================== */
+@media screen and (max-width: 480px) {
+  .login-card {
+    padding: 30px 20px;
   }
-  50% {
-    background-position: 100% 50%;
+  .login-card h1 {
+    font-size: 36px;
+    margin-bottom: 30px;
   }
-  100% {
-    background-position: 0% 50%;
+  .login-card input {
+    padding: 14px 18px;
+    font-size: 16px;
+  }
+  button#loginBtn {
+    padding: 14px;
+    font-size: 18px;
   }
 }
