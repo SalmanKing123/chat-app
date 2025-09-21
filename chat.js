@@ -130,32 +130,6 @@ window.sendMessage = sendMessage;
 window.goBack = goBack;
 
 // =================== UPLOAD CHAT BACKGROUND ===================
-// const reader = new FileReader();
-// reader.onload = function (event) {
-//   chatContainer.style.backgroundImage = `url(${event.target.result})`;
-//   chatContainer.style.backgroundSize = "cover";
-//   chatContainer.style.backgroundPosition = "center";
-// };
-// reader.readAsDataURL(file);
-
-// bgUploadInput.addEventListener("change", async (e) => {
-//   const file = e.target.files[0];
-//   if (!file) return;
-
-//   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
-//   await uploadBytes(storageRef, file);
-
-//   const downloadURL = await getDownloadURL(storageRef);
-
-//   const userDocRef = doc(db, "users", userId);
-//   await updateDoc(userDocRef, { chatBackground: downloadURL });
-
-//   chatContainer.style.backgroundImage = `url(${downloadURL})`;
-//   chatContainer.style.backgroundSize = "cover";
-//   chatContainer.style.backgroundPosition = "center";
-// });
-
-// =================== UPLOAD CHAT BACKGROUND ===================
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -200,3 +174,88 @@ async function loadUserBackground() {
 
 // Call on page load
 loadUserBackground();
+
+// =================== VOICE MESSAGES ===================
+const voiceBtn = document.getElementById("voiceBtn");
+let mediaRecorder;
+let audioChunks = [];
+
+voiceBtn.addEventListener("click", async () => {
+  if (!mediaRecorder || mediaRecorder.state === "inactive") {
+    // Start recording
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      audioChunks = [];
+
+      // Upload to Firebase Storage
+      const audioRef = ref(
+        storage,
+        `voice-messages/${loggedInUser}-${Date.now()}.webm`
+      );
+      await uploadBytes(audioRef, audioBlob);
+      const downloadURL = await getDownloadURL(audioRef);
+
+      // Add to Firestore
+      await addDoc(collection(db, "messages"), {
+        sender: loggedInUser,
+        text: "[Voice Message]",
+        audio: downloadURL,
+        timestamp: serverTimestamp(),
+      });
+    };
+
+    mediaRecorder.start();
+    voiceBtn.textContent = "⏹️ Stop";
+  } else {
+    // Stop recording
+    mediaRecorder.stop();
+    voiceBtn.textContent = "🎤";
+  }
+});
+
+// =================== RENDER AUDIO IN CHAT ===================
+function renderMessage(docData, id) {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add(
+    "message",
+    docData.sender === loggedInUser ? "you" : "friend"
+  );
+
+  msgDiv.innerText = `${docData.sender}: ${docData.text}`;
+
+  // Render audio if exists
+  if (docData.audio) {
+    const audioEl = document.createElement("audio");
+    audioEl.src = docData.audio;
+    audioEl.controls = true;
+    audioEl.style.display = "block";
+    audioEl.style.marginTop = "5px";
+    msgDiv.appendChild(audioEl);
+  }
+
+  // Add edit/delete for your own messages
+  if (docData.sender === loggedInUser) {
+    const actionsDiv = document.createElement("div");
+    actionsDiv.style.marginTop = "5px";
+
+    const editBtn = document.createElement("button");
+    editBtn.innerText = "✏️";
+    editBtn.onclick = () => editMessage(id, docData.text);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.innerText = "🗑️";
+    deleteBtn.onclick = () => deleteMessage(id);
+
+    actionsDiv.appendChild(editBtn);
+    actionsDiv.appendChild(deleteBtn);
+    msgDiv.appendChild(document.createElement("br"));
+    msgDiv.appendChild(actionsDiv);
+  }
+
+  chatContainer.appendChild(msgDiv);
+}
