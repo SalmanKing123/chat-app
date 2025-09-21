@@ -39,6 +39,8 @@ const storage = getStorage(app);
 // =================== DOM ELEMENTS ===================
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
+const notificationContainer = document.getElementById("notification-container");
+const typingIndicator = document.getElementById("typing-indicator");
 const bgUploadInput = document.getElementById("bg-upload");
 
 // Add voice button dynamically
@@ -46,11 +48,15 @@ const chatInputDiv = document.querySelector(".chat-input");
 const voiceBtn = document.createElement("button");
 voiceBtn.id = "voiceBtn";
 voiceBtn.textContent = "🎤";
+voiceBtn.style.marginLeft = "5px";
 chatInputDiv.appendChild(voiceBtn);
 
-// Current user
+// =================== CURRENT USER ===================
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
 const userId = loggedInUser;
+
+// =================== NOTIFICATION SOUND ===================
+const pingSound = new Audio("sounds/ping.mp3");
 
 // =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
@@ -59,11 +65,9 @@ function renderMessage(docData, id) {
     "message",
     docData.sender === loggedInUser ? "you" : "friend"
   );
-
-  // Text
   msgDiv.innerText = `${docData.sender}: ${docData.text || ""}`;
 
-  // Audio
+  // Render audio if exists
   if (docData.audio) {
     const audioEl = document.createElement("audio");
     audioEl.src = docData.audio;
@@ -73,7 +77,7 @@ function renderMessage(docData, id) {
     msgDiv.appendChild(audioEl);
   }
 
-  // Edit/Delete for own messages
+  // Edit/delete for your own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -93,17 +97,31 @@ function renderMessage(docData, id) {
   }
 
   chatContainer.appendChild(msgDiv);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// =================== LOAD MESSAGES ===================
+// =================== LOAD MESSAGES (REAL-TIME) ===================
+let lastMessageId = null;
 const messagesQuery = query(
   collection(db, "messages"),
   orderBy("timestamp", "asc")
 );
+
 onSnapshot(messagesQuery, (snapshot) => {
   chatContainer.innerHTML = "";
-  snapshot.forEach((doc) => renderMessage(doc.data(), doc.id));
+  snapshot.forEach((doc) => {
+    renderMessage(doc.data(), doc.id);
+  });
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  // Play ping for new messages
+  const lastMsg = snapshot.docs[snapshot.docs.length - 1];
+  if (lastMsg && lastMsg.id !== lastMessageId) {
+    const data = lastMsg.data();
+    if (data.sender !== loggedInUser) {
+      pingSound.play().catch(() => {});
+    }
+    lastMessageId = lastMsg.id;
+  }
 });
 
 // =================== SEND MESSAGE ===================
@@ -111,45 +129,45 @@ async function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
 
-  try {
-    await addDoc(collection(db, "messages"), {
-      sender: loggedInUser,
-      text,
-      timestamp: serverTimestamp(),
-    });
-    messageInput.value = "";
-  } catch (err) {
-    console.error("Error sending message:", err);
-  }
+  await addDoc(collection(db, "messages"), {
+    sender: loggedInUser,
+    text: text,
+    timestamp: serverTimestamp(),
+  });
+
+  messageInput.value = "";
 }
 window.sendMessage = sendMessage;
 
-// =================== EDIT/DELETE ===================
+// =================== EDIT MESSAGE ===================
 async function editMessage(id, oldText) {
   const newText = prompt("Edit your message:", oldText);
   if (newText && newText.trim() !== "") {
-    await updateDoc(doc(db, "messages", id), { text: newText.trim() });
+    await updateDoc(doc(db, "messages", id), {
+      text: newText.trim(),
+    });
   }
 }
 
+// =================== DELETE MESSAGE ===================
 async function deleteMessage(id) {
   if (confirm("Delete this message?")) {
     await deleteDoc(doc(db, "messages", id));
   }
 }
 
-// =================== GO BACK ===================
+// =================== BACK ===================
 function goBack() {
   window.location.href = "index.html";
 }
 window.goBack = goBack;
 
-// =================== UPLOAD BACKGROUND ===================
+// =================== UPLOAD CHAT BACKGROUND ===================
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Show locally
+  // Preview immediately
   const reader = new FileReader();
   reader.onload = (event) => {
     chatContainer.style.backgroundImage = `url(${event.target.result})`;
@@ -158,72 +176,66 @@ bgUploadInput.addEventListener("change", async (e) => {
   };
   reader.readAsDataURL(file);
 
-  // Upload
-  try {
-    const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    await updateDoc(doc(db, "users", userId), { chatBackground: downloadURL });
-    chatContainer.style.backgroundImage = `url(${downloadURL})`;
-  } catch (err) {
-    console.error("Error uploading background:", err);
-  }
+  // Upload to Firebase Storage
+  const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
+  await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(storageRef);
+
+  const userDocRef = doc(db, "users", userId);
+  await updateDoc(userDocRef, { chatBackground: downloadURL });
+
+  chatContainer.style.backgroundImage = `url(${downloadURL})`;
 });
 
+// Load background on page load
 async function loadUserBackground() {
-  try {
-    const userSnap = await getDoc(doc(db, "users", userId));
-    if (userSnap.exists() && userSnap.data().chatBackground) {
-      const bgURL = userSnap.data().chatBackground;
+  const userDocRef = doc(db, "users", userId);
+  const userSnap = await getDoc(userDocRef);
+  if (userSnap.exists()) {
+    const bgURL = userSnap.data().chatBackground;
+    if (bgURL) {
       chatContainer.style.backgroundImage = `url(${bgURL})`;
       chatContainer.style.backgroundSize = "cover";
       chatContainer.style.backgroundPosition = "center";
     }
-  } catch (err) {
-    console.error("Error loading background:", err);
   }
 }
 loadUserBackground();
 
-// =================== VOICE MESSAGES ===================
+// =================== VOICE MESSAGE ===================
 let mediaRecorder;
 let audioChunks = [];
 
 voiceBtn.addEventListener("click", async () => {
   if (!mediaRecorder || mediaRecorder.state === "inactive") {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
 
+    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
       audioChunks = [];
-      mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
 
-      mediaRecorder.onstop = async () => {
-        try {
-          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-          const audioRef = ref(
-            storage,
-            `voice-messages/${loggedInUser}-${Date.now()}.webm`
-          );
-          await uploadBytes(audioRef, audioBlob);
-          const downloadURL = await getDownloadURL(audioRef);
+      // Upload audio
+      const audioRef = ref(
+        storage,
+        `voice-messages/${userId}-${Date.now()}.webm`
+      );
+      await uploadBytes(audioRef, audioBlob);
+      const downloadURL = await getDownloadURL(audioRef);
 
-          await addDoc(collection(db, "messages"), {
-            sender: loggedInUser,
-            text: "[Voice Message]",
-            audio: downloadURL,
-            timestamp: serverTimestamp(),
-          });
-        } catch (err) {
-          console.error("Error sending voice message:", err);
-        }
-      };
+      // Add message in Firestore
+      await addDoc(collection(db, "messages"), {
+        sender: loggedInUser,
+        text: "[Voice Message]",
+        audio: downloadURL,
+        timestamp: serverTimestamp(),
+      });
+    };
 
-      mediaRecorder.start();
-      voiceBtn.textContent = "⏹️ Stop";
-    } catch (err) {
-      console.error("Error accessing microphone:", err);
-    }
+    mediaRecorder.start();
+    voiceBtn.textContent = "⏹️ Stop";
   } else {
     mediaRecorder.stop();
     voiceBtn.textContent = "🎤";
