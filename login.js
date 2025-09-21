@@ -7,15 +7,29 @@ const users = [
 
 const form = document.getElementById("loginForm");
 
+// =================== SHOW/HIDE PASSWORD ===================
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+
+togglePassword.addEventListener("click", () => {
+  const type =
+    passwordInput.getAttribute("type") === "password" ? "text" : "password";
+  passwordInput.setAttribute("type", type);
+
+  // Optional: change icon
+  togglePassword.textContent = type === "password" ? "👁️" : "🙈";
+});
+
+// =================== LOGIN FORM SUBMIT ===================
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const usernameInput = document.getElementById("username").value.trim();
-  const passwordInput = document.getElementById("password").value.trim();
+  const passwordInputValue = passwordInput.value.trim(); // updated variable
 
   const validUser = users.find(
     (user) =>
       user.username.toLowerCase() === usernameInput.toLowerCase() &&
-      user.password === passwordInput
+      user.password === passwordInputValue
   );
 
   if (validUser) {
