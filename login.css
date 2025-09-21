@@ -1,32 +1,15 @@
-/* Full screen funky background */
-body,
-html {
-  height: 100%;
+/* General page styling */
+body {
   margin: 0;
-  font-family: "Bungee", cursive;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
-  background: linear-gradient(-45deg, #ff4b1f, #1fddff, #ffe600, #ff00f7);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+  font-family: "Bungee", cursive;
 }
 
-/* Background animation */
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* Centered login card */
+/* Center card */
 .login-container {
   display: flex;
   justify-content: center;
@@ -34,87 +17,68 @@ html {
   width: 100%;
 }
 
+/* Card styling */
 .login-card {
   background: rgba(255, 255, 255, 0.95);
-  padding: 40px 50px;
-  border-radius: 25px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  padding: 40px 30px;
+  border-radius: 20px;
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
   text-align: center;
-  animation: floatIn 1s ease-out;
-  width: 400px;
-  max-width: 90%;
+  width: 350px;
 }
 
-/* Card float-in animation */
-@keyframes floatIn {
-  0% {
-    transform: translateY(-100px) scale(0.7);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
+/* Title */
+.login-card h1 {
+  margin-bottom: 30px;
+  color: #333;
+  font-size: 32px;
 }
 
-/* Inputs & button */
+/* Inputs */
 .login-card input {
-  display: block;
   width: 100%;
   padding: 12px 15px;
-  margin: 15px 0;
-  border-radius: 20px;
-  border: none;
+  margin-bottom: 20px;
+  border: 2px solid #ff9a9e;
+  border-radius: 10px;
   font-size: 16px;
+  outline: none;
+  transition: 0.3s;
 }
 
+.login-card input:focus {
+  border-color: #ff6a88;
+}
+
+/* Password wrapper */
+.password-wrapper {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* Button */
 .login-card button {
-  padding: 12px 25px;
+  width: 100%;
+  padding: 12px;
   border: none;
-  border-radius: 25px;
-  background: linear-gradient(90deg, #ff4b1f, #1fddff);
-  color: white;
+  border-radius: 10px;
+  background: #ff6a88;
+  color: #fff;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
-  font-size: 16px;
-  transition: transform 0.3s;
+  transition: 0.3s;
 }
 
 .login-card button:hover {
-  transform: scale(1.1) rotate(-5deg);
-}
-
-/* =================== MOBILE RESPONSIVE =================== */
-@media screen and (max-width: 768px) {
-  .login-card {
-    padding: 35px 40px;
-    width: 350px;
-  }
-
-  .login-card input {
-    font-size: 15px;
-    padding: 10px 12px;
-  }
-
-  .login-card button {
-    font-size: 15px;
-    padding: 10px 20px;
-  }
-}
-
-@media screen and (max-width: 480px) {
-  .login-card {
-    padding: 25px 20px;
-    width: 90%;
-  }
-
-  .login-card input {
-    font-size: 14px;
-    padding: 8px 10px;
-  }
-
-  .login-card button {
-    font-size: 14px;
-    padding: 8px 15px;
-  }
+  background: #ff4a6a;
+  transform: scale(1.03);
 }

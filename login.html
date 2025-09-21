@@ -14,18 +14,16 @@
       <div class="login-card">
         <h1>💬 3Chat Login</h1>
         <input type="text" id="username" placeholder="Enter username" />
-        <input type="password" id="password" placeholder="Enter password" />
-        <button onclick="login()">Login</button>
+
+        <div class="password-wrapper">
+          <input type="password" id="password" placeholder="Enter password" />
+          <span id="togglePassword" class="toggle-password">👁️</span>
+        </div>
+
+        <button id="loginBtn">Login</button>
       </div>
     </div>
 
-    <script>
-      function login() {
-        const username = document.getElementById("username").value.trim();
-        if (!username) return alert("Enter a username!");
-        localStorage.setItem("loggedInUser", username);
-        window.location.href = "index.html";
-      }
-    </script>
+    <script src="login.js"></script>
   </body>
 </html>
