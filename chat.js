@@ -42,10 +42,14 @@ const messageInput = document.getElementById("messageInput");
 const notificationContainer = document.getElementById("notification-container");
 const typingIndicator = document.getElementById("typing-indicator");
 const bgUploadInput = document.getElementById("bg-upload");
+const sendBtn = document.getElementById("sendBtn");
 
 // Current user
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
 const userId = loggedInUser; // or Firebase Auth UID
+
+// =================== PING SOUND ===================
+const pingSound = new Audio("sounds/ping.mp3"); // make sure ping.mp3 is in the same folder
 
 // =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
@@ -55,10 +59,9 @@ function renderMessage(docData, id) {
     docData.sender === loggedInUser ? "you" : "friend"
   );
 
-  // Text message
   msgDiv.innerText = `${docData.sender}: ${docData.text}`;
 
-  // Add edit/delete for your own messages
+  // Add edit/delete buttons for own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -88,14 +91,16 @@ const messagesQuery = query(
 
 onSnapshot(messagesQuery, (snapshot) => {
   chatContainer.innerHTML = "";
-  snapshot.forEach((docSnap) => {
-    renderMessage(docSnap.data(), docSnap.id);
+  snapshot.forEach((doc) => {
+    renderMessage(doc.data(), doc.id);
+
+    // Play ping sound for messages from others
+    if (doc.data().sender !== loggedInUser) {
+      pingSound.currentTime = 0;
+      pingSound.play().catch((err) => console.log(err));
+    }
   });
   chatContainer.scrollTop = chatContainer.scrollHeight;
-
-  // Optional: play ping sound for new messages
-  const audio = new Audio("ping.mp3"); // ensure this file is in the correct folder
-  audio.play().catch(() => {});
 });
 
 // =================== SEND MESSAGE ===================
@@ -103,16 +108,13 @@ async function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
 
-  try {
-    await addDoc(collection(db, "messages"), {
-      sender: loggedInUser,
-      text: text,
-      timestamp: serverTimestamp(),
-    });
-    messageInput.value = "";
-  } catch (err) {
-    console.error("Error sending message:", err);
-  }
+  await addDoc(collection(db, "messages"), {
+    sender: loggedInUser,
+    text: text,
+    timestamp: serverTimestamp(),
+  });
+
+  messageInput.value = "";
 }
 
 // =================== EDIT MESSAGE ===================
@@ -130,7 +132,7 @@ async function deleteMessage(id) {
   }
 }
 
-// =================== BACK ===================
+// =================== BACK BUTTON ===================
 function goBack() {
   window.location.href = "index.html";
 }
@@ -153,16 +155,15 @@ bgUploadInput.addEventListener("change", async (e) => {
   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
   await uploadBytes(storageRef, file);
 
+  // Save URL in Firestore
   const downloadURL = await getDownloadURL(storageRef);
   const userDocRef = doc(db, "users", userId);
   await updateDoc(userDocRef, { chatBackground: downloadURL });
 
   chatContainer.style.backgroundImage = `url(${downloadURL})`;
-  chatContainer.style.backgroundSize = "cover";
-  chatContainer.style.backgroundPosition = "center";
 });
 
-// =================== LOAD USER BACKGROUND ON PAGE LOAD ===================
+// =================== LOAD USER BACKGROUND ===================
 async function loadUserBackground() {
   const userDocRef = doc(db, "users", userId);
   const userSnap = await getDoc(userDocRef);
@@ -176,8 +177,15 @@ async function loadUserBackground() {
   }
 }
 
-loadUserBackground();
-
-// =================== EXPOSE FUNCTIONS ===================
+// =================== GLOBAL EXPOSURE ===================
 window.sendMessage = sendMessage;
 window.goBack = goBack;
+
+// =================== INITIAL LOAD ===================
+loadUserBackground();
+
+// =================== BUTTON EVENTS ===================
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
