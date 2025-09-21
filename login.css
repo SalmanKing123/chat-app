@@ -85,10 +85,16 @@ body {
 }
 
 /* Password wrapper */
+/* Password wrapper */
 .password-wrapper {
   position: relative;
 }
 
+.password-wrapper input {
+  padding-right: 45px; /* add enough space for the eye icon */
+}
+
+/* Toggle icon */
 .toggle-password {
   position: absolute;
   right: 15px;
