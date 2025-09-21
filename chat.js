@@ -39,29 +39,27 @@ const storage = getStorage(app);
 // =================== DOM ELEMENTS ===================
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
 const notificationContainer = document.getElementById("notification-container");
 const bgUploadInput = document.getElementById("bg-upload");
-const sendBtn = document.getElementById("sendBtn");
+const pingSound = document.getElementById("pingSound");
 
 // Current user
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
-const userId = loggedInUser; // or Firebase Auth UID
+const userId = loggedInUser;
 
-// =================== TRACK LAST TIMESTAMP ===================
-let lastTimestamp = null;
+// =================== FUNCTIONS ===================
 
-// =================== RENDER MESSAGE ===================
+// Render a message
 function renderMessage(docData, id) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add(
     "message",
     docData.sender === loggedInUser ? "you" : "friend"
   );
+  msgDiv.innerText = `${docData.sender}: ${docData.text}`;
 
-  // Message content
-  msgDiv.innerText = `${docData.sender}: ${docData.text || ""}`;
-
-  // Edit/Delete for your own messages
+  // Add edit/delete for your own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -81,64 +79,22 @@ function renderMessage(docData, id) {
   }
 
   chatContainer.appendChild(msgDiv);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// =================== LOAD MESSAGES (REAL-TIME, ORDERED) ===================
-const messagesQuery = query(
-  collection(db, "messages"),
-  orderBy("timestamp", "asc")
-);
-
-onSnapshot(messagesQuery, (snapshot) => {
-  chatContainer.innerHTML = "";
-
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    renderMessage(data, doc.id);
-
-    // Only fire ping/notification for new messages from others
-    if (
-      data.sender !== loggedInUser &&
-      (!lastTimestamp || data.timestamp?.toMillis() > lastTimestamp)
-    ) {
-      // Ping sound
-      const ping = new Audio("sounds/ping.mp3");
-      ping.play();
-
-      // Browser notification
-      if (Notification.permission === "granted") {
-        new Notification(`New message from ${data.sender}`, {
-          body: data.text || "📢 New message",
-          icon: "favicon.ico",
-        });
-      }
-    }
-
-    // Update lastTimestamp
-    if (data.timestamp) {
-      const ts = data.timestamp.toMillis();
-      if (!lastTimestamp || ts > lastTimestamp) lastTimestamp = ts;
-    }
-  });
-
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-});
-
-// =================== SEND MESSAGE ===================
+// Send message
 async function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
-
   await addDoc(collection(db, "messages"), {
     sender: loggedInUser,
     text: text,
     timestamp: serverTimestamp(),
   });
-
   messageInput.value = "";
 }
 
-// =================== EDIT ===================
+// Edit message
 async function editMessage(id, oldText) {
   const newText = prompt("Edit your message:", oldText);
   if (newText && newText.trim() !== "") {
@@ -146,34 +102,30 @@ async function editMessage(id, oldText) {
   }
 }
 
-// =================== DELETE ===================
+// Delete message
 async function deleteMessage(id) {
   if (confirm("Delete this message?")) {
     await deleteDoc(doc(db, "messages", id));
   }
 }
 
-// =================== BACK ===================
+// Go back
 function goBack() {
   window.location.href = "index.html";
 }
 
-// Expose functions globally
-window.sendMessage = sendMessage;
-window.goBack = goBack;
-
-// =================== SEND BUTTON EVENT ===================
+// =================== EVENT LISTENERS ===================
 sendBtn.addEventListener("click", sendMessage);
 messageInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
-// =================== UPLOAD CHAT BACKGROUND ===================
+// Background upload
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Render immediately using FileReader
+  // Show immediately
   const reader = new FileReader();
   reader.onload = (event) => {
     chatContainer.style.backgroundImage = `url(${event.target.result})`;
@@ -182,21 +134,16 @@ bgUploadInput.addEventListener("change", async (e) => {
   };
   reader.readAsDataURL(file);
 
-  // Upload file to Firebase Storage
+  // Upload to Firebase
   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
   await uploadBytes(storageRef, file);
-
-  // Save in Firestore
   const downloadURL = await getDownloadURL(storageRef);
   const userDocRef = doc(db, "users", userId);
   await updateDoc(userDocRef, { chatBackground: downloadURL });
-
   chatContainer.style.backgroundImage = `url(${downloadURL})`;
-  chatContainer.style.backgroundSize = "cover";
-  chatContainer.style.backgroundPosition = "center";
 });
 
-// =================== LOAD USER BACKGROUND ===================
+// Load background on page load
 async function loadUserBackground() {
   const userDocRef = doc(db, "users", userId);
   const userSnap = await getDoc(userDocRef);
@@ -211,7 +158,43 @@ async function loadUserBackground() {
 }
 loadUserBackground();
 
-// =================== NOTIFICATION PERMISSION ===================
-if ("Notification" in window && Notification.permission !== "granted") {
-  Notification.requestPermission();
+// =================== REAL-TIME MESSAGE LISTENER ===================
+let lastMessageId = null; // Track last message
+
+const messagesQuery = query(
+  collection(db, "messages"),
+  orderBy("timestamp", "asc")
+);
+
+onSnapshot(messagesQuery, (snapshot) => {
+  chatContainer.innerHTML = "";
+
+  snapshot.forEach((doc) => {
+    renderMessage(doc.data(), doc.id);
+  });
+
+  // Play ping only for new message
+  const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+  if (
+    lastDoc &&
+    lastDoc.id !== lastMessageId &&
+    lastDoc.data().sender !== loggedInUser
+  ) {
+    pingSound.currentTime = 0;
+    pingSound.play();
+
+    // Show notification once
+    showNotification(`${lastDoc.data().sender}: ${lastDoc.data().text}`);
+  }
+
+  if (lastDoc) lastMessageId = lastDoc.id;
+});
+
+// =================== NOTIFICATIONS ===================
+function showNotification(text) {
+  const notif = document.createElement("div");
+  notif.classList.add("notification");
+  notif.innerText = text;
+  notificationContainer.appendChild(notif);
+  setTimeout(() => notif.remove(), 3000); // auto remove
 }
