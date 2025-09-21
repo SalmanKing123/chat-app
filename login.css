@@ -5,8 +5,22 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+  background: linear-gradient(270deg, #ff9a9e, #fad0c4, #fbc2eb, #a18cd1);
+  background-size: 800% 800%;
   font-family: "Bungee", cursive;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* Center card */
@@ -20,34 +34,54 @@ body {
 /* Card styling */
 .login-card {
   background: rgba(255, 255, 255, 0.95);
-  padding: 40px 30px;
-  border-radius: 20px;
-  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+  padding: 50px 30px;
+  border-radius: 25px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   text-align: center;
-  width: 350px;
+  width: 380px;
+  transform: scale(1);
+  transition: transform 0.3s ease;
+}
+
+.login-card:hover {
+  transform: scale(1.05);
 }
 
 /* Title */
 .login-card h1 {
-  margin-bottom: 30px;
-  color: #333;
-  font-size: 32px;
+  margin-bottom: 35px;
+  color: #ff6a88;
+  font-size: 36px;
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  animation: bounceTitle 2s infinite;
+}
+
+@keyframes bounceTitle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 /* Inputs */
 .login-card input {
   width: 100%;
-  padding: 12px 15px;
+  padding: 14px 18px;
   margin-bottom: 20px;
   border: 2px solid #ff9a9e;
-  border-radius: 10px;
+  border-radius: 15px;
   font-size: 16px;
   outline: none;
   transition: 0.3s;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .login-card input:focus {
   border-color: #ff6a88;
+  box-shadow: 0 0 10px rgba(255, 106, 136, 0.6);
 }
 
 /* Password wrapper */
@@ -57,28 +91,35 @@ body {
 
 .toggle-password {
   position: absolute;
-  right: 10px;
+  right: 15px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 20px;
+  transition: 0.3s;
+}
+
+.toggle-password:hover {
+  transform: translateY(-50%) scale(1.2);
 }
 
 /* Button */
 .login-card button {
   width: 100%;
-  padding: 12px;
+  padding: 15px;
   border: none;
-  border-radius: 10px;
-  background: #ff6a88;
+  border-radius: 15px;
+  background: linear-gradient(45deg, #ff6a88, #ff99ac);
   color: #fff;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
 }
 
 .login-card button:hover {
-  background: #ff4a6a;
-  transform: scale(1.03);
+  background: linear-gradient(45deg, #ff99ac, #ff6a88);
+  transform: scale(1.05) rotate(-1deg);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
 }
