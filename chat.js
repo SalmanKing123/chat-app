@@ -39,27 +39,93 @@ const storage = getStorage(app);
 // =================== DOM ELEMENTS ===================
 const chatContainer = document.getElementById("chat-container");
 const messageInput = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
 const notificationContainer = document.getElementById("notification-container");
+const typingIndicator = document.getElementById("typing-indicator");
 const bgUploadInput = document.getElementById("bg-upload");
-const pingSound = document.getElementById("pingSound");
+const sendBtn = document.getElementById("sendBtn");
 
-// Current user
+// =================== CURRENT USER ===================
 const loggedInUser = localStorage.getItem("loggedInUser") || "You";
 const userId = loggedInUser;
 
-// =================== FUNCTIONS ===================
+// =================== USER COLORS ===================
+const userColors = {
+  Sam: "#FF69B4",
+  Mohsin: "#00FF7F",
+  Arsh: "#FFD700",
+  [loggedInUser]: "#FFFF00",
+};
 
-// Render a message
+// =================== NOTIFICATION SOUND ===================
+const pingSound = new Audio("sounds/ping.mp3");
+
+// =================== SEND MESSAGE ===================
+async function sendMessage() {
+  const text = messageInput.value.trim();
+  if (!text) return;
+  sendBtn.disabled = true;
+
+  await addDoc(collection(db, "messages"), {
+    sender: loggedInUser,
+    text: text,
+    timestamp: serverTimestamp(),
+  });
+
+  messageInput.value = "";
+  sendBtn.disabled = false;
+}
+
+sendBtn.addEventListener("click", sendMessage);
+
+// =================== EDIT & DELETE ===================
+async function editMessage(id, oldText) {
+  const newText = prompt("Edit your message:", oldText);
+  if (newText && newText.trim() !== "") {
+    await updateDoc(doc(db, "messages", id), { text: newText.trim() });
+  }
+}
+
+async function deleteMessage(id) {
+  if (confirm("Delete this message?")) {
+    await deleteDoc(doc(db, "messages", id));
+  }
+}
+
+// =================== BACK BUTTON ===================
+function goBack() {
+  window.location.href = "index.html";
+}
+window.goBack = goBack;
+
+// =================== RENDER MESSAGE ===================
 function renderMessage(docData, id) {
   const msgDiv = document.createElement("div");
-  msgDiv.classList.add(
-    "message",
-    docData.sender === loggedInUser ? "you" : "friend"
-  );
-  msgDiv.innerText = `${docData.sender}: ${docData.text}`;
+  msgDiv.classList.add("message");
+  msgDiv.classList.add(docData.sender === loggedInUser ? "you" : "friend");
 
-  // Add edit/delete for your own messages
+  // Message text
+  const textSpan = document.createElement("span");
+  textSpan.textContent = `${docData.text}`;
+  textSpan.style.backgroundColor = userColors[docData.sender] || "#CCCCCC";
+  textSpan.style.padding = "8px 12px";
+  textSpan.style.borderRadius = "15px";
+  textSpan.style.display = "inline-block";
+  msgDiv.appendChild(textSpan);
+
+  // Timestamp
+  const timeSpan = document.createElement("span");
+  if (docData.timestamp && docData.timestamp.toDate) {
+    const d = docData.timestamp.toDate();
+    timeSpan.textContent = ` ${d.getHours()}:${d
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+  }
+  timeSpan.style.fontSize = "12px";
+  timeSpan.style.marginLeft = "5px";
+  msgDiv.appendChild(timeSpan);
+
+  // Edit/Delete for own messages
   if (docData.sender === loggedInUser) {
     const actionsDiv = document.createElement("div");
     actionsDiv.style.marginTop = "5px";
@@ -82,53 +148,52 @@ function renderMessage(docData, id) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Send message
-async function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text) return;
-  await addDoc(collection(db, "messages"), {
-    sender: loggedInUser,
-    text: text,
-    timestamp: serverTimestamp(),
+// =================== LOAD MESSAGES ===================
+let lastMessageId = null;
+
+const messagesQuery = query(
+  collection(db, "messages"),
+  orderBy("timestamp", "asc")
+);
+
+onSnapshot(messagesQuery, (snapshot) => {
+  snapshot.docChanges().forEach((change) => {
+    if (change.type === "added") {
+      const data = change.doc.data();
+      renderMessage(data, change.doc.id);
+
+      // Play ping & notification only for new messages (not on page load)
+      if (change.doc.id !== lastMessageId && data.sender !== loggedInUser) {
+        pingSound.play().catch(() => {});
+        showNotification(`${data.sender}: ${data.text}`);
+      }
+
+      lastMessageId = change.doc.id;
+    }
   });
-  messageInput.value = "";
-}
-
-// Edit message
-async function editMessage(id, oldText) {
-  const newText = prompt("Edit your message:", oldText);
-  if (newText && newText.trim() !== "") {
-    await updateDoc(doc(db, "messages", id), { text: newText.trim() });
-  }
-}
-
-// Delete message
-async function deleteMessage(id) {
-  if (confirm("Delete this message?")) {
-    await deleteDoc(doc(db, "messages", id));
-  }
-}
-
-// Go back
-function goBack() {
-  window.location.href = "index.html";
-}
-
-// =================== EVENT LISTENERS ===================
-sendBtn.addEventListener("click", sendMessage);
-messageInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
 });
 
-// Background upload
+// =================== NOTIFICATIONS ===================
+function showNotification(text) {
+  const notif = document.createElement("div");
+  notif.classList.add("notification");
+  notif.innerText = text;
+  notificationContainer.appendChild(notif);
+
+  setTimeout(() => {
+    notif.remove();
+  }, 3000);
+}
+
+// =================== UPLOAD BACKGROUND ===================
 bgUploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Show immediately
+  // Render immediately
   const reader = new FileReader();
-  reader.onload = (event) => {
-    chatContainer.style.backgroundImage = `url(${event.target.result})`;
+  reader.onload = (ev) => {
+    chatContainer.style.backgroundImage = `url(${ev.target.result})`;
     chatContainer.style.backgroundSize = "cover";
     chatContainer.style.backgroundPosition = "center";
   };
@@ -138,12 +203,16 @@ bgUploadInput.addEventListener("change", async (e) => {
   const storageRef = ref(storage, `chat-backgrounds/${userId}-${Date.now()}`);
   await uploadBytes(storageRef, file);
   const downloadURL = await getDownloadURL(storageRef);
+
   const userDocRef = doc(db, "users", userId);
   await updateDoc(userDocRef, { chatBackground: downloadURL });
+
   chatContainer.style.backgroundImage = `url(${downloadURL})`;
+  chatContainer.style.backgroundSize = "cover";
+  chatContainer.style.backgroundPosition = "center";
 });
 
-// Load background on page load
+// =================== LOAD BACKGROUND ===================
 async function loadUserBackground() {
   const userDocRef = doc(db, "users", userId);
   const userSnap = await getDoc(userDocRef);
@@ -157,44 +226,3 @@ async function loadUserBackground() {
   }
 }
 loadUserBackground();
-
-// =================== REAL-TIME MESSAGE LISTENER ===================
-let lastMessageId = null; // Track last message
-
-const messagesQuery = query(
-  collection(db, "messages"),
-  orderBy("timestamp", "asc")
-);
-
-onSnapshot(messagesQuery, (snapshot) => {
-  chatContainer.innerHTML = "";
-
-  snapshot.forEach((doc) => {
-    renderMessage(doc.data(), doc.id);
-  });
-
-  // Play ping only for new message
-  const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-  if (
-    lastDoc &&
-    lastDoc.id !== lastMessageId &&
-    lastDoc.data().sender !== loggedInUser
-  ) {
-    pingSound.currentTime = 0;
-    pingSound.play();
-
-    // Show notification once
-    showNotification(`${lastDoc.data().sender}: ${lastDoc.data().text}`);
-  }
-
-  if (lastDoc) lastMessageId = lastDoc.id;
-});
-
-// =================== NOTIFICATIONS ===================
-function showNotification(text) {
-  const notif = document.createElement("div");
-  notif.classList.add("notification");
-  notif.innerText = text;
-  notificationContainer.appendChild(notif);
-  setTimeout(() => notif.remove(), 3000); // auto remove
-}
