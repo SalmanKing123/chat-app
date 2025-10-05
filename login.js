@@ -1,8 +1,8 @@
 // 3 users
 const users = [
-  { username: "Sam", password: "sam123##" },
-  { username: "Mohsin", password: "mohsin123$$" },
-  { username: "Arsh", password: "arsh123%%" },
+  { username: "Sam", password: "sam##" },
+  { username: "Biya", password: "biya$$" },
+  { username: "Basa", password: "basa123%%" },
 ];
 
 const usernameInput = document.getElementById("username");
