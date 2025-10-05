@@ -37,7 +37,7 @@ const statuses = ["Online", "Busy", "Sleeping"];
 const statusColors = ["online", "busy", "sleeping"];
 
 function updateStatuses() {
-  const friends = ["Sam", "Mohsin", "Arsh"];
+  const friends = ["Sam", "Basa", "Biya"];
   friends.forEach((friend) => {
     const statusSpan = document.getElementById(`status-${friend}`);
     if (!statusSpan) return; // skip if no element found

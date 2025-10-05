@@ -49,8 +49,8 @@ const loggedInUser = localStorage.getItem("loggedInUser") || "You";
 // =================== USER COLORS ===================
 const userColors = {
   Sam: "#FF69B4",
-  Mohsin: "#00FF7F",
-  Arsh: "#FFD700",
+  Basa: "#00FF7F",
+  Biya: "#FFD700",
   [loggedInUser]: "#FFFF00",
 };
 
